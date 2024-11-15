@@ -1,0 +1,131 @@
+<!-- ========================= Include extend & static title tag =================================== -->
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- ============================= Iclude child template's title ================================== -->
+{% block title %}
+  {{ product.name }} - Product Details
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ======================= Extra meta information, stylesheet links, etc. ======================== -->
+<!-- =============================================================================================== -->
+{% block extra_head %}
+  <!-- For additional child-specific styles or scripts -->
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ============================== Start of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+{% block content %}
+  <!-- breadcrumb-section -->
+  <div class="breadcrumb-section breadcrumb-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="breadcrumb-text">
+            <p>Explore our range</p>
+            <h1>{{ product.name }}</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end breadcrumb section -->
+  <!-- =============================================================================================== -->
+  <!-- ============================== Start of Single Product ====================================== -->
+  <!-- =============================================================================================== -->
+  <!-- Single Product Section -->
+  <div class="single-product mt-150 mb-150">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="single-product-img">
+            <img src="{{ product.photos.url }}" alt="{{ product.name }}" />
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="single-product-content">
+            <h3>{{ product.name }}</h3>
+            <p class="single-product-pricing">
+              <span>Per Kg</span> {{ product.price }}৳
+            </p>
+            <p>{{ product.description }}</p>
+            <div class="single-product-form">
+              <form action="#" method="post">
+                <input type="number" placeholder="0" />
+              </form>
+              <a href="cart.html" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a>
+              <p>
+                <strong>Categories:</strong> {{ product.get_category_display }}
+              </p>
+            </div>
+            <h4>Share:</h4>
+            <ul class="product-share">
+              <li>
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+              </li>
+              <li>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+              </li>
+              <li>
+                <a href="#"><i class="fab fa-google-plus-g"></i></a>
+              </li>
+              <li>
+                <a href="#"><i class="fab fa-linkedin"></i></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Single Product Section -->
+
+  <!-- Related Products Section -->
+  <div class="more-products mb-150">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="section-title">
+            <h3><span class="orange-text">Related</span> Products</h3>
+            <p>Discover similar products that might interest you.</p>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        {% for product in related_products %}
+          <div class="col-lg-4 col-md-6 {% if forloop.counter|divisibleby:3 %}offset-md-3 offset-lg-0{% endif %} text-center">
+            <div class="single-product-item">
+              <div class="product-image">
+                <a href="{% url 'single-product' product.slug %}"><img src="{{ product.photos.url }}" alt="{{ product.name }}" /></a>
+              </div>
+              <h3>{{ product.name }}</h3>
+              <p class="product-price">
+                <span>Per Kg</span> {{ product.price }}৳
+              </p>
+              <a href="cart.html" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a>
+            </div>
+          </div>
+        {% empty %}
+          <p>No related products available.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <!-- end more products -->
+
+  <!-- =============================================================================================== -->
+  <!-- =================================== End of More Products ======================================== -->
+  <!-- =============================================================================================== -->
+{% endblock %}
+<!-- =============================================================================================== -->
+<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+
+<!-- =============================================================================================== -->
+<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- =============================================================================================== -->
+{% block extra_scripts %}
+  <!-- For child-specific JavaScript -->
+{% endblock %}

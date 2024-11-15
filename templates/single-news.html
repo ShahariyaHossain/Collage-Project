@@ -1,0 +1,224 @@
+<!-- ========================= Include extend & static title tag =================================== -->
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- ============================= Iclude child template's title ================================== -->
+{% block title %}
+  {{ blog.title }} - News
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ======================= Extra meta information, stylesheet links, etc. ======================== -->
+<!-- =============================================================================================== -->
+{% block extra_head %}
+  <!-- For additional child-specific styles or scripts -->
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ============================== Start of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+{% block content %}
+  <!-- =============================================================================================== -->
+  <!-- ============================== Start of Home Page Slider ====================================== -->
+  <!-- =============================================================================================== -->
+
+  <div>
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+  <!-- breadcrumb-section -->
+  <div class="breadcrumb-section breadcrumb-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="breadcrumb-text">
+            <p>Read the Details</p>
+            <h1>{{ blog.title }}</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end breadcrumb section -->
+
+  <!-- Single Article Section -->
+  <div class="mt-150 mb-150">
+    <div class="container">
+      <div class="row">
+        <!-- Blog Content -->
+        <div class="col-lg-8">
+          <div class="single-article-section">
+            <!-- Blog Details -->
+            <div class="single-article-text">
+              <!-- Display the blog's photo dynamically -->
+              <div class="single-artcile-bg" style="background-image: url('{{ blog.photo.url }}');"></div>
+              <p class="blog-meta">
+                <span class="author"><i class="fas fa-user"></i> {{ blog.author }}</span>
+                <span class="date"><i class="fas fa-calendar"></i> {{ blog.date|date:'d F, Y' }}</span>
+              </p>
+              <h2>{{ blog.title }}</h2>
+              <p>{{ blog.description|linebreaks }}</p>
+            </div>
+
+            <!-- =================== Comments Section =========================== -->
+            <div class="comments-list-wrap">
+              <h3 class="comment-count-title">{{ comments.count }} Comments</h3>
+              <div class="comment-list">
+                {% for comment in comments %}
+                  <div class="single-comment-body">
+                    <div class="comment-user-avater">
+                      <img src="{{ comment.users.photos.url }}" alt="{{ comment.users.name }}" />
+                    </div>
+                    <div class="comment-text-body">
+                      <h4>
+                        {{ comment.users.name }}
+                        <span class="comment-date">{{ comment.date|date:'d F, Y' }}</span>
+                        <a href="#" class="reply-link" data-comment-id="{{ comment.id }}" data-comment-name="{{ comment.users.name }}">reply</a>
+                      </h4>
+                      <p>
+                        {% if comment.parent %}
+                          <span class="mention">@{{ comment.parent.users.name }}</span>
+                        {% endif %}
+                        {{ comment.comment }}
+                      </p>
+                    </div>
+                  </div>
+                {% empty %}
+                  <p>No comments yet. Be the first to comment!</p>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Comment Form -->
+            <div class="comment-template">
+              <h4>Leave a comment</h4>
+
+              {% if user.is_authenticated %}
+                <p>If you have a comment, don't hesitate to share your thoughts.</p>
+                <form method="post" action="{% url 'blog-detail' blog.slug %}">
+                  {% csrf_token %}
+                  <p>
+                    <textarea name="comment" id="comment" cols="30" rows="5" placeholder="Your Message" required></textarea>
+                    <input type="hidden" name="parent_id" id="parent_id" value="" />
+                  </p>
+                  <p>
+                    <input type="submit" value="Submit" />
+                  </p>
+                </form>
+              {% else %}
+                <p>
+                  Please <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to leave a comment.
+                </p>
+              {% endif %}
+
+              <script>
+                document.querySelectorAll('.reply-link').forEach((link) => {
+                  link.addEventListener('click', function (e) {
+                    e.preventDefault()
+                    const parentId = this.dataset.commentId
+                    const commentName = this.dataset.commentName
+                    document.getElementById('parent_id').value = parentId
+                    const commentField = document.getElementById('comment')
+                    commentField.value = `@${commentName}, `
+                    commentField.focus()
+                  })
+                })
+              </script>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Section -->
+        <div class="col-lg-4">
+          <div class="sidebar-section">
+            <!-- Recent Posts -->
+            <div class="recent-posts">
+              <h4>Recent Posts</h4>
+              <ul>
+                {% for blog in recent_posts %}
+                  <li>
+                    <a href="{% url 'blog-detail' blog.slug %}">{{ blog.title }}</a>
+                  </li>
+                {% empty %}
+                  <li>No recent posts available.</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Archive Posts -->
+            <div class="archive-posts">
+              <h4>Archive Posts</h4>
+              <ul>
+                {% for date in archive_posts %}
+                  <li>
+                    <a href="?year={{ date.year }}&month={{ date.month }}">{{ date|date:'F Y' }}</a>
+                  </li>
+                {% empty %}
+                  <li>No archived posts available.</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Display Archive Filtered Posts if Available -->
+            {% if archive_filtered %}
+              <div class="archive-filtered-posts">
+                <h4>Posts from {{ archive_filtered.0.date|date:'F Y' }}</h4>
+                <ul>
+                  {% for post in archive_filtered %}
+                    <li>
+                      <a href="{% url 'blog-detail' post.slug %}">{{ post.title }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
+            <!-- Tags Section -->
+            <div class="tag-section">
+              <h4>Tags</h4>
+              <ul>
+                {% for tag in tags %}
+                  <li>
+                    <a href="?tag={{ tag|slugify }}">{{ tag }}</a>
+                  </li>
+                {% empty %}
+                  <li>No tags available.</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Display Tag Filtered Posts if Available -->
+            {% if tag_filtered %}
+              <div class="tag-filtered-posts">
+                <h4>Posts tagged with "{{ tag_filtered.0.tag }}"</h4>
+                <ul>
+                  {% for post in tag_filtered %}
+                    <li>
+                      <a href="{% url 'blog-detail' post.slug %}">{{ post.title }}</a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end single article section -->
+{% endblock %}
+<!-- =============================================================================================== -->
+<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+
+<!-- =============================================================================================== -->
+<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- =============================================================================================== -->
+{% block extra_scripts %}
+  <!-- For child-specific JavaScript -->
+{% endblock %}

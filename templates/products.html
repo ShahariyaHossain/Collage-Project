@@ -1,0 +1,155 @@
+<!-- ========================= Include extend & static title tag =================================== -->
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- ============================= Iclude child template's title ================================== -->
+{% block title %}
+  Shop
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ======================= Extra meta information, stylesheet links, etc. ======================== -->
+<!-- =============================================================================================== -->
+{% block extra_head %}
+  <!-- For additional child-specific styles or scripts -->
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ============================== Start of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+{% block content %}
+  <!-- breadcrumb-section -->
+  <div class="breadcrumb-section breadcrumb-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="breadcrumb-text">
+            <p>Fresh and Organic</p>
+            <h1>Products</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end breadcrumb section -->
+
+  <!-- =============================================================================================== -->
+  <!-- =============================== Start of Products list ======================================== -->
+  <!-- =============================================================================================== -->
+  <!-- products -->
+  <div class="product-section mt-150 mb-150">
+    <div class="container">
+      <!-- product-filters -->
+      <div class="row">
+        <div class="col-md-12">
+          <div class="product-filters">
+            {% comment %} <ul>
+              <li class="active" data-filter="*">All</li>
+              <li data-filter=".fruits">Fruits</li>
+              <li data-filter=".vegetables">Vegetables</li>
+              <li data-filter=".organic">Organic</li>
+              <li data-filter=".dairy">Dairy</li>
+              <li data-filter=".snacks">Snacks</li>
+            </ul> {% endcomment %}
+            <ul>
+              <li class="active" data-filter="*">All</li>
+              {% for category, label in products.0.CATEGORY_CHOICES %}
+                <li data-filter=".filter-{{ category|slugify }}">{{ label }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Looping -->
+      <div class="row product-lists">
+        {% for product in products %}
+          <div class="col-lg-4 col-md-6 text-center filter-{{ product.category|slugify }}">
+            <div class="single-product-item">
+              <div class="product-image">
+                <a href="{% url 'single-product' product.slug %}"><img src="{{ product.photos.url }}" alt="{{ product.name }}" /></a>
+              </div>
+              <h3>{{ product.name }}</h3>
+              <p class="product-price">
+                <span>Per Kg</span> {{ product.price }}৳
+              </p>
+              <a href="cart.html" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a>
+            </div>
+          </div>
+        {% empty %}
+          <p>No products available.</p>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      <div class="row">
+        <div class="col-lg-12 text-center">
+          <div class="pagination-wrap">
+            <ul>
+              <!-- Previous Page Link -->
+              {% if products.has_previous %}
+                <li>
+                  <a href="?page={{ products.previous_page_number }}">Prev</a>
+                </li>
+              {% endif %}
+
+              <!-- Page Numbers with Active Class -->
+              {% for num in products.paginator.page_range %}
+                {% if num >= products.number|add:'-2' and num <= products.number|add:'2' %}
+                  <li>
+                    <a href="?page={{ num }}" class="{% if products.number == num %}active{% endif %}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              <!-- Next Page Link -->
+              {% if products.has_next %}
+                <li>
+                  <a href="?page={{ products.next_page_number }}">Next</a>
+                </li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end products -->
+
+  <!-- =============================================================================================== -->
+  <!-- ================================= End of Products List ======================================== -->
+  <!-- =============================================================================================== -->
+{% endblock %}
+<!-- =============================================================================================== -->
+<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+
+<!-- =============================================================================================== -->
+<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- =============================================================================================== -->
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Initialize Isotope
+      var $grid = $('.product-lists').isotope({
+        itemSelector: '.col-lg-4.col-md-6',
+        layoutMode: 'fitRows'
+      })
+    
+      // Filter items on button click
+      $('.product-filters ul li').click(function () {
+        $('.product-filters ul li').removeClass('active')
+        $(this).addClass('active')
+        var filterValue = $(this).attr('data-filter')
+        $grid.isotope({ filter: filterValue })
+      })
+    
+      // Recalculate layout after images have loaded
+      $grid.imagesLoaded().progress(function () {
+        $grid.isotope('layout')
+      })
+    })
+  </script>
+{% endblock %}
