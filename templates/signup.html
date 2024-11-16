@@ -1,0 +1,155 @@
+<!-- ========================= Include extend & static title tag =================================== -->
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- ============================= Iclude child template's title ================================== -->
+{% block title %}
+  Login
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ======================= Extra meta information, stylesheet links, etc. ======================== -->
+<!-- =============================================================================================== -->
+{% block extra_head %}
+  <!-- For additional child-specific styles or scripts -->
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ============================== Start of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+{% block content %}
+  <!-- =============================================================================================== -->
+  <!-- ============================== Start of Home Page Slider ====================================== -->
+  <!-- =============================================================================================== -->
+
+  <!-- breadcrumb-section -->
+  <div class="breadcrumb-section breadcrumb-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="breadcrumb-text">
+            <p>Fresh and Organic</p>
+            <h1><span class="orange-text">Sign</span> UP</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end breadcrumb section -->
+  <!-- Signup section -->
+  <div class="product-section mt-150 mb-150">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="section-title">
+            <h3><span class="orange-text">Sign</span> UP</h3>
+            <p>Welcome to Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-8 col-md-6 offset-md-3 offset-lg-2 text-center">
+          <div class="single-product-item">
+            <form id="signup-form" method="post">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="id_name"><i class="fas fa-user"></i></label>
+                <input type="text" name="name" id="id_name" required placeholder="Name" />
+              </div>
+              <div class="form-group">
+                <label for="id_name"><i class="fas fa-location"></i></label>
+                <input type="text" name="address" id="id_address" required placeholder="Address" />
+              </div>
+              <div class="form-group">
+                <label for="id_email"><i class="fas fa-envelope"></i></label>
+                <input type="email" name="email" id="id_email" required placeholder="Email" />
+              </div>
+              <div class="form-group">
+                <label for="id_password"><i class="fas fa-lock"></i></label>
+                <input type="password" name="password" id="id_password" required placeholder="Password" />
+              </div>
+              <div class="form-group">
+                <label for="id_password_confirm"><i class="fas fa-lock"></i></label>
+                <input type="password" name="password_confirm" id="id_password_confirm" required placeholder="Confirm Password" />
+              </div>
+
+              <!-- Terms and Conditions Checkbox -->
+              <div class="form-group">
+                <label for="agree-term"><input type="checkbox" id="agree-term" name="agree-term" />I agree to the <a href="#">Terms & Conditions</a></label>
+              </div>
+
+              <p>
+                <input type="submit" value="Sign Up" />
+              </p>
+            </form>
+
+            <!-- Link to Sign-In Page -->
+            <p class="login-link">
+              Already have an account? <a href="{% url 'login' %}">Log in here</a>
+            </p>
+            <div id="terms-error" style="color: red; display: none;">You must agree to the Terms and Conditions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================================================== -->
+  <!-- =================================== End of Latest News ======================================== -->
+  <!-- =============================================================================================== -->
+{% endblock %}
+<!-- =============================================================================================== -->
+<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+
+<!-- =============================================================================================== -->
+<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- =============================================================================================== -->
+{% block extra_scripts %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('signup-form')
+      const termsCheckbox = document.getElementById('agree-term')
+      const termsError = document.getElementById('terms-error')
+    
+      form.addEventListener('submit', function (event) {
+        // Check if the Terms checkbox is checked
+        if (!termsCheckbox.checked) {
+          // Prevent form submission
+          event.preventDefault()
+    
+          // Show the error message
+          termsError.style.display = 'block'
+        } else {
+          // Hide the error message if the checkbox is checked
+          termsError.style.display = 'none'
+    
+          // If checkbox is checked, proceed with AJAX submission
+          const formData = new FormData(form)
+    
+          fetch("{% url 'signup' %}", {
+            method: 'POST',
+            body: formData
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                // Redirect or show success message
+                window.location.href = '/login/'
+              } else {
+                // Handle form submission errors
+                alert('There was an error with your registration.')
+              }
+            })
+            .catch((error) => {
+              console.error('Error:', error)
+            })
+    
+          // Prevent normal form submission
+          event.preventDefault()
+        }
+      })
+    })
+  </script>
+{% endblock %}

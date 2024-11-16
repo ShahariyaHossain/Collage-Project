@@ -2,29 +2,31 @@
 # =============================  Import Built-in Modules  =======================================
 # ===============================================================================================
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 import uuid
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # # from requests
-    
+
 # ===============================================================================================
 # ============================  Import Shop Models & Forms  =====================================
 # ===============================================================================================
 from .models import Account, Product, CartItem, Slider, Testimonial, Blog, Comment
-# from .forms import SignupForm
 from django.db.models import Count
-
+from .forms import SignUpForm
 # # STORE_ID = "onsho5f1d196bdff9c"
 # # STORE_PASSWORD = "onsho5f1d196bdff9c@ssl"
 # # API_URL = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
-
+from decimal import Decimal
 
 
 # ===============================================================================================
@@ -189,25 +191,137 @@ class SingleProductView(DetailView):
 
 
 
+class CartView(LoginRequiredMixin, TemplateView):
+    template_name = 'cart.html'
+    login_url = '/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cart_items = CartItem.objects.filter(accounts=self.request.user)
+        
+        # Calculate subtotal, discount, and total for the cart
+        subtotal = sum(item.products.price * item.quantity for item in cart_items)
+        discount = sum(item.discount for item in cart_items)
+        total = subtotal - discount
+
+        context.update({
+            'cart_items': cart_items,
+            'subtotal': subtotal,
+            'discount': discount,
+            'total': total,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        cart_item_id = request.POST.get('id')
+        coupon_code = request.POST.get('coupon', '')
+
+        # Handle 'update' action: Update cart item quantity
+        if action == 'update':
+            cart_item = get_object_or_404(CartItem, id=cart_item_id)
+            cart_item.quantity = int(request.POST.get('quantity', 1))
+            cart_item.calculate_totals()
+
+        # Handle 'remove' action: Remove the item from the cart
+        elif action == 'remove':
+            cart_item = get_object_or_404(CartItem, id=cart_item_id)
+            cart_item.delete()
+
+        # Handle 'apply_coupon' action: Apply coupon logic
+        elif action == 'apply_coupon':
+            # Simulate coupon logic
+            cart_items = CartItem.objects.filter(accounts=request.user)
+            for cart_item in cart_items:
+                if coupon_code == 'DISCOUNT10':  # Replace with your coupon validation logic
+                    cart_item.discount = min(cart_item.subtotal, Decimal('10.00'))
+                else:
+                    cart_item.discount = Decimal('0.00')
+                cart_item.calculate_totals()
+
+        # Refresh cart data and return updated context
+        cart_items = CartItem.objects.filter(accounts=request.user)
+        subtotal = sum(item.products.price * item.quantity for item in cart_items)
+        discount = sum(item.discount for item in cart_items)
+        total = subtotal - discount
+
+        data = {
+            'subtotal': subtotal,
+            'discount': discount,
+            'total': total,
+        }
+
+        # Return updated data as a JSON response
+        return JsonResponse(data)
+
+
+
+class CheckoutView(LoginRequiredMixin, TemplateView):
+    template_name = 'checkout.html'
+    login_url = '/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        cart_items = CartItem.objects.filter(accounts=user)
+
+        subtotal = sum(item.subtotal for item in cart_items)
+        discount = sum(item.discount for item in cart_items)
+        total = subtotal - discount + 50  # Fixed shipping cost
+
+        context.update({
+            'user': get_object_or_404(Account, id=user.id),  # Fetch user details from Account model
+            'cart_items': cart_items,
+            'subtotal': subtotal,
+            'discount': discount,
+            'total': total,
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles form submissions (e.g., saving 'say_something' from billing form).
+        """
+        action = request.POST.get('action', '')
+        if action == 'save_billing':
+            # Save 'say_something' for each cart item (if multiple exist)
+            for item in CartItem.objects.filter(accounts=request.user):
+                item.say_something = request.POST.get('say_something', '')
+                item.save()
+            return JsonResponse({'message': 'Billing info saved successfully!'})
+
+        # Default response
+        return JsonResponse({'error': 'Invalid action'}, status=400)
+
 # ===============================================================================================
 # =================================  Handling User Signup  ======================================
 # ===============================================================================================
-# def signup(request):
-#     if request.method == 'POST':
-#         form = SignupForm(request.POST)
-        
-#         # Check if "agree-term" is checked
-#         if not request.POST.get('agree-term'):
-#             form.add_error(None, "You must agree to the Terms and Conditions.")
-        
-#         if form.is_valid():
-#             users = form.save()  # Save the users data to the database
-#             return redirect('login')  # Send user to the login page
 
-#     else:
-#         form = SignupForm()
 
-#     return render(request, 'signup.html', {'form': form})
+class SignUpView(View):
+    def get(self, request):
+        """Render the sign-up page with the registration form."""
+        form = SignUpForm()
+        return render(request, 'signup.html', {'form': form})
+
+    def post(self, request):
+        """Handle form submission for user registration."""
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            # Save the account (custom model)
+            account = form.save(commit=False)
+            account.set_password(form.cleaned_data['password'])  # Encrypt the password
+            account.save()
+
+            # Optionally, log the user in automatically after registration
+            login(request, account)
+            
+            messages.success(request, "Account created successfully.")
+            return redirect('login')  # Redirect to the login page or any other page you want
+        else:
+            messages.error(request, "Error during registration. Please try again.")
+        return render(request, 'signup.html', {'form': form})
+
 
 
 # ===============================================================================================

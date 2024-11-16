@@ -18,10 +18,10 @@ class ProductAdmin(admin.ModelAdmin):
 # Registering the CartItem model
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display = ('accounts', 'products', 'quantity', 'total_price')  # Display these fields in the admin list view
+    list_display = ('accounts', 'products', 'quantity', 'total')  # Display these fields in the admin list view
     search_fields = ('accounts__name', 'products__name')  # Search by account name and product name
     list_filter = ('accounts',)  # Filter by account
-    readonly_fields = ('total_price',)  # Make total_price read-only in the admin
+    readonly_fields = ('total',)  # Make total_price read-only in the admin
 
 # Registering the Slider model
 @admin.register(Slider)

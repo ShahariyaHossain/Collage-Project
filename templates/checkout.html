@@ -44,35 +44,44 @@
         <div class="col-lg-8">
           <div class="checkout-accordion-wrap">
             <div class="accordion" id="accordionExample">
+              <!-- Billing Address Section -->
               <div class="card single-accordion">
                 <div class="card-header" id="headingOne">
                   <h5 class="mb-0"><button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">Billing Address</button></h5>
                 </div>
-
                 <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
                   <div class="card-body">
                     <div class="billing-address-form">
-                      <form action="index.html">
+                      <form action="" method="post" id="billing-form">
+                        {% csrf_token %}
+                        <!-- Display Name -->
                         <p>
-                          <input type="text" placeholder="Name" />
+                          <input type="text" placeholder="Name" value="{{ user.name }}" disabled />
                         </p>
+                        <!-- Display Email -->
                         <p>
-                          <input type="email" placeholder="Email" />
+                          <input type="email" placeholder="Email" value="{{ user.email }}" disabled />
                         </p>
+                        <!-- Display Address -->
                         <p>
-                          <input type="text" placeholder="Address" />
+                          <input type="text" placeholder="Address" value="{{ user.address }}" disabled />
                         </p>
+                        <!-- Display Phone -->
                         <p>
-                          <input type="tel" placeholder="Phone" />
+                          <input type="tel" placeholder="Phone" value="{{ user.phone }}" disabled />
                         </p>
+                        <!-- Optional Say Something -->
                         <p>
-                          <textarea name="bill" id="bill" cols="30" rows="10" placeholder="Say Something"></textarea>
+                          <textarea name="say_something" id="say_something" cols="30" rows="10" placeholder="Say Something">{{ cart_item.say_something }}</textarea>
                         </p>
+                        <button type="submit" class="boxed-btn black" id="save-billing">Save Changes</button>
                       </form>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <!-- Shipping Address Section (Untouched) -->
               <div class="card single-accordion">
                 <div class="card-header" id="headingTwo">
                   <h5 class="mb-0"><button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">Shipping Address</button></h5>
@@ -85,6 +94,8 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Card Details Section (Untouched) -->
               <div class="card single-accordion">
                 <div class="card-header" id="headingThree">
                   <h5 class="mb-0"><button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">Card Details</button></h5>
@@ -92,7 +103,7 @@
                 <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
                   <div class="card-body">
                     <div class="card-details">
-                      <p>Your card details goes here.</p>
+                      <p>Your card details go here.</p>
                     </div>
                   </div>
                 </div>
@@ -101,49 +112,56 @@
           </div>
         </div>
 
+        <!-- Order Details Section -->
         <div class="col-lg-4">
           <div class="order-details-wrap">
             <table class="order-details">
               <thead>
                 <tr>
-                  <th>Your order Details</th>
+                  <th>Your Order Details</th>
                   <th>Price</th>
                 </tr>
               </thead>
               <tbody class="order-details-body">
-                <tr>
-                  <td>Product</td>
-                  <td>Total</td>
-                </tr>
-                <tr>
-                  <td>Strawberry</td>
-                  <td>$85.00</td>
-                </tr>
-                <tr>
-                  <td>Berry</td>
-                  <td>$70.00</td>
-                </tr>
-                <tr>
-                  <td>Lemon</td>
-                  <td>$35.00</td>
-                </tr>
+                {% for item in cart_items %}
+                  <tr>
+                    <td>{{ item.products.name }} x {{ item.quantity }}</td>
+                    <td>৳{{ item.total }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="2">No items in your cart.</td>
+                  </tr>
+                {% endfor %}
               </tbody>
+              <thead>
+                <tr>
+                  <th>Your Checkout Details</th>
+                  <th>Price</th>
+                </tr>
+              </thead>
               <tbody class="checkout-details">
                 <tr>
                   <td>Subtotal</td>
-                  <td>$190</td>
+                  <td id="subtotal">৳{{ cart_item.subtotal }}</td>
+                </tr>
+                <tr>
+                  <td>Discount</td>
+                  <td id="discount">৳{{ cart_item.discount }}</td>
                 </tr>
                 <tr>
                   <td>Shipping</td>
-                  <td>$50</td>
-                </tr>
-                <tr>
-                  <td>Total</td>
-                  <td>$240</td>
+                  <td>৳50</td>
                 </tr>
               </tbody>
+              <thead>
+                <tr>
+                  <th>Total</th>
+                  <th id="total">৳{{ total }}</th>
+                </tr>
+              </thead>
             </table>
-            <a href="#" class="boxed-btn">Place Order</a>
+            <a href="#" class="boxed-btn black">Place Order</a>
           </div>
         </div>
       </div>
@@ -163,5 +181,39 @@
 <!-- ====================== For additional child-specific styles or scripts ======================= -->
 <!-- =============================================================================================== -->
 {% block extra_scripts %}
-  <!-- For child-specific JavaScript -->
+  <script>
+    $(document).ready(function () {
+      // Function to calculate and update total
+      function updateTotal() {
+        let subtotal = parseFloat($('#subtotal').text().replace('৳', '').trim())
+        let discount = parseFloat($('#discount').text().replace('৳', '').trim())
+        let shipping = 50 // Fixed shipping cost
+        let total = subtotal - discount + shipping
+        $('#total').text('৳' + total.toFixed(2))
+      }
+    
+      // Call updateTotal initially
+      updateTotal()
+    
+      // AJAX submission for billing form
+      $('#billing-form').on('submit', function (e) {
+        e.preventDefault()
+        $.ajax({
+          url: '', // Submits to the same page
+          method: 'POST',
+          data: {
+            action: 'save_billing',
+            say_something: $('#say_something').val(),
+            csrfmiddlewaretoken: '{{ csrf_token }}'
+          },
+          success: function (response) {
+            alert(response.message) // Show success message
+          },
+          error: function (response) {
+            console.log('Error saving billing info:', response)
+          }
+        })
+      })
+    })
+  </script>
 {% endblock %}

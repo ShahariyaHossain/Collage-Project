@@ -85,20 +85,26 @@ def pre_save_product_receiver(sender, instance, *args, **kwargs):
 
 pre_save.connect(pre_save_product_receiver, sender=Product)
 
+
+# CartItem Models
 class CartItem(models.Model):
-    accounts = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="cart_users")
-    products = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cart_items")
+    accounts = models.ForeignKey('Account', on_delete=models.CASCADE, related_name="cart_users")
+    products = models.ForeignKey('Product', on_delete=models.CASCADE, related_name="cart_items")
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     say_something = models.TextField(max_length=500, blank=True, help_text="Optional message about this cart item.")
     coupon = models.CharField(max_length=50, blank=True, null=True, help_text="Coupon code for discount")
-    
-    def __str__(self):
-        return f"{self.quantity} of {self.product.name} by {self.user.name}"
+    # New fields
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Final total for this cart item after discount")
 
-    # Property to calculate total price based on quantity and product price
-    @property
-    def total_price(self):
-        return self.products.price * self.quantity
+    def __str__(self):
+        return f"{self.quantity} of {self.products.name} by {self.accounts.name}"
+
+    def calculate_totals(self):
+        self.subtotal = self.products.price * self.quantity
+        self.total = self.subtotal - self.discount
+        self.save()
 
 
 # ===============Slider Model for the Home Page==============
@@ -111,7 +117,7 @@ class Slider(models.Model):
 
     title = models.CharField(max_length=255, help_text="Main heading for the slider")
     subtitle = models.CharField(max_length=255, help_text="Subtitle for the slider")
-    background_image = models.ImageField(upload_to='slider_images/', help_text="Background image for the slider")
+    background_image = models.ImageField(upload_to='slider_photos/', help_text="Background image for the slider")
     text_align = models.CharField(max_length=250, choices=TEXT_ALIGN_CHOICES, default='text-center', help_text="Text alignment for the slider content")
 
     def __str__(self):
