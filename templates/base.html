@@ -86,27 +86,27 @@
               <nav class="main-menu">
                 <ul>
                   <li class="current-list-item">
-                    <a href="#">Home</a>
-                    <ul class="sub-menu">
+                    <a href="{% url 'home' %}">Home</a>
+                    {% comment %} <ul class="sub-menu">
                       <li>
                         <a href="index.html">Static Home</a>
                       </li>
                       <li>
                         <a href="index_2.html">Slider Home</a>
                       </li>
-                    </ul>
+                    </ul> {% endcomment %}
                   </li>
                   <li>
-                    <a href="about.html">About</a>
+                    <a href="{% url 'about' %}">About</a>
                   </li>
-                  <li>
+                  {% comment %} <li>
                     <a href="#">Pages</a>
                     <ul class="sub-menu">
                       <li>
                         <a href="404.html">404 page</a>
                       </li>
                       <li>
-                        <a href="about.html">About</a>
+                        <a href="{% url 'about' %}">About</a>
                       </li>
                       <li>
                         <a href="cart.html">Cart</a>
@@ -115,33 +115,33 @@
                         <a href="checkout.html">Check Out</a>
                       </li>
                       <li>
-                        <a href="contact.html">Contact</a>
+                        <a href="{% url 'contact' %}">Contact</a>
                       </li>
                       <li>
-                        <a href="news.html">News</a>
+                        <a href="{% url 'news-list' %}">News</a>
                       </li>
                       <li>
-                        <a href="shop.html">Shop</a>
+                        <a href="{% url 'product-list' %}">Shop</a>
                       </li>
                     </ul>
-                  </li>
+                  </li> {% endcomment %}
                   <li>
-                    <a href="news.html">News</a>
-                    <ul class="sub-menu">
+                    <a href="{% url 'news-list' %}">News</a>
+                    {% comment %} <ul class="sub-menu">
                       <li>
                         <a href="news.html">News</a>
                       </li>
                       <li>
                         <a href="single-news.html">Single News</a>
                       </li>
-                    </ul>
+                    </ul> {% endcomment %}
                   </li>
                   <li>
-                    <a href="contact.html">Contact</a>
+                    <a href="{% url 'contact' %}">Contact</a>
                   </li>
                   <li>
-                    <a href="shop.html">Shop</a>
-                    <ul class="sub-menu">
+                    <a href="{% url 'product-list' %}">Shop</a>
+                    {% comment %} <ul class="sub-menu">
                       <li>
                         <a href="shop.html">Shop</a>
                       </li>
@@ -154,12 +154,12 @@
                       <li>
                         <a href="cart.html">Cart</a>
                       </li>
-                    </ul>
+                    </ul> {% endcomment %}
                   </li>
                   <li>
                     <div class="header-icons">
-                      <a class="shopping-cart" href="cart.html"><i class="fas fa-shopping-cart"></i></a>
-                      <a class="mobile-hide search-bar-icon" href="#"><i class="fas fa-search"></i></a>
+                      <a class="shopping-cart" href="{% url 'cart' %}"><i class="fas fa-shopping-cart"></i></a>
+                      <a class="mobile-hide search-bar-icon" href="{% url 'cart' %}"><i class="fas fa-search"></i></a>
                     </div>
                   </li>
                 </ul>

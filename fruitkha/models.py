@@ -32,11 +32,11 @@ class Account(models.Model):
 class Product(models.Model):
     # Products categories
     CATEGORY_CHOICES = [
-        ('fruits', 'Fruits'),
-        ('vegetables', 'Vegetables'),
-        ('organic', 'Organic'),
-        ('dairy', 'Dairy'),
-        ('snacks', 'Snacks'),
+        ('strawberry', 'Strawberry'),
+        ('berry', 'Berry'),
+        ('lemon', 'Lemon'),
+        ('apple', 'Apple'),
+        ('avocado', 'Avocado'),
     ]
 
     name = models.CharField(max_length=100, help_text="Name of the product")
