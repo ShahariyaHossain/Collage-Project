@@ -11,23 +11,22 @@ from django.views.generic import ListView, DetailView, TemplateView
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.conf import settings
+from sslcommerz_lib import SSLCOMMERZ
 import uuid
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-# # from requests
+# from requests
 
 # ===============================================================================================
 # ============================  Import Shop Models & Forms  =====================================
 # ===============================================================================================
-from .models import Account, Product, CartItem, Slider, Testimonial, Blog, Comment
+from .models import Account, Product, CartItem, Slider, Testimonial, Blog, Comment, TeamMember, ContactMessage, ContactDetails, Subscription
 from django.db.models import Count
 from .forms import SignUpForm
-# # STORE_ID = "onsho5f1d196bdff9c"
-# # STORE_PASSWORD = "onsho5f1d196bdff9c@ssl"
-# # API_URL = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
 from decimal import Decimal
-
+from .signals import multi_signal
 
 # ===============================================================================================
 # ================================  Handling Home Page  =========================================
@@ -47,17 +46,6 @@ class HomePageView(ListView):
         context['testimonials'] = Testimonial.objects.all()  # Fetch all testimonials
         context['blogs'] = Blog.objects.order_by('-date')[:3]  # Fetch latest 3 blog posts
         return context
-
-
-
-
-# def home(request):
-#     context = {
-#         'key1': 'value1',
-#         'key2': 'value2',
-#         # Add other context variables as needed
-#     }
-#     return render(request, 'home.html', context)
 
 
 def news_list(request):
@@ -85,7 +73,7 @@ class BlogDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Pass top-level comments (exclude nested rendering in template)
+        # Pass top-level comments
         context['comments'] = Comment.objects.filter(blog=self.object).select_related('users', 'parent')
 
         # Recent posts
@@ -138,11 +126,19 @@ class BlogDetailView(DetailView):
             parent_comment = get_object_or_404(Comment, id=parent_id)
 
         # Create the comment
-        Comment.objects.create(
+        comment = Comment.objects.create(
             blog=blog,
             users=request.user,
             comment=comment_text,
             parent=parent_comment
+        )
+
+        # Trigger the multi_signal for comment notification
+        multi_signal.send_robust(
+            sender=Comment,
+            subject="New Comment on Your Blog",
+            message=f"A new comment has been posted by {request.user.username} on your blog '{blog.title}'.",
+            recipient_list=[blog.author.email]  # Replace with blog author's email
         )
 
         messages.success(request, "Your comment has been added successfully.")
@@ -186,9 +182,6 @@ class SingleProductView(DetailView):
         ).exclude(slug=self.object.slug)[:3]  # Limit to 3 related products
 
         return context
-
-
-
 
 
 class CartView(LoginRequiredMixin, TemplateView):
@@ -313,172 +306,269 @@ class SignUpView(View):
             account.set_password(form.cleaned_data['password'])  # Encrypt the password
             account.save()
 
-            # Optionally, log the user in automatically after registration
+            # Log the user in automatically after registration
             login(request, account)
             
+            # Display success message
             messages.success(request, "Account created successfully.")
-            return redirect('login')  # Redirect to the login page or any other page you want
+            
+            # Trigger the signal to send a welcome email
+            multi_signal.send_robust(
+                sender=account.__class__,
+                subject="Welcome to Fruitkha",
+                message="Hello! Thank you for joining Fruitkha.",
+                recipient_list=[account.email]  # Correct recipient
+            )
+            
+            return redirect('home')  # Redirect to home or another suitable page
         else:
             messages.error(request, "Error during registration. Please try again.")
+        
         return render(request, 'signup.html', {'form': form})
 
 
 
 # ===============================================================================================
+# ===================================  About View  ==============================================
+# ===============================================================================================
+class AboutView(TemplateView):
+    template_name = 'about.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['team_members'] = TeamMember.objects.all()  # Fetch all team members
+        return context
+
+# ===============================================================================================
+# ===================================  Contact View  ============================================
+# ===============================================================================================
+class ContactView(TemplateView):
+    template_name = 'contact.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['contact'] = ContactDetails.objects.first() # or None  # Load the first contact details entry
+        return context
+
+    def post(self, request, *args, **kwargs):
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Validate and save the message
+        if not name or not email or not message:
+            messages.error(request, "Name, email, and message are required.")
+            return redirect('contact')
+        contact_message = ContactMessage.objects.create(
+            name=name,
+            email=email,
+            phone=phone,
+            subject=subject,
+            message=message
+        )
+        
+        # Fetch all recipient emails
+        recipient_emails = ContactDetails.objects.filter(email__isnull=False).values_list('email', flat=True)
+        recipient_email_list = list(recipient_emails)
+
+        if not recipient_email_list:
+            messages.error(request, "No recipient email configured. Please contact support.")
+            return redirect('contact')
+
+        # Trigger the multi_signal to notify admin
+        multi_signal.send_robust(
+            sender=ContactMessage,
+            subject=f"New Contact Message from {name}",
+            message=f"""
+                You have received a new message:
+                
+                Name: {name}
+                Email: {email}
+                Phone: {phone}
+                Subject: {subject}
+                Message: {message}
+            """,
+            recipient_list=recipient_email_list
+        )
+
+        # Notify user and redirect back to the contact page
+        messages.success(request, 'Your message has been sent successfully!')
+        return redirect('contact')
+
+# ===============================================================================================
 # ===================================  Handling User Login  =====================================
 # ===============================================================================================
-# def login(request):
-#     if request.method == 'POST':
-#         form = SignupForm(request.POST)
-        
-#         if form.is_valid():
-#             # Save the user data (commit=True saves it to the database)
-#             user = form.save()
-#             return redirect('home')  # Replace with the URL of your success page
 
+class PaymentInitView(View):
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        cart_items = CartItem.objects.filter(accounts=user)
+
+        if not cart_items.exists():
+            return JsonResponse({'error': 'No items in your cart.'}, status=400)
+
+        # Calculate total amount
+        total_amount = sum((item.subtotal - item.discount) for item in cart_items) + 50
+
+        # Generate unique transaction ID
+        tran_id = str(uuid.uuid4())
+
+        # SSLCommerz settings
+        ssl_settings = settings.SSLCOMMERZ_SETTINGS
+        sslcommez = SSLCOMMERZ(ssl_settings)
+
+        # Payment information
+        post_body = {
+            'total_amount': str(total_amount),
+            'currency': 'BDT',
+            'tran_id': tran_id,
+            'success_url': request.build_absolute_uri('/payment-success/'),
+            'fail_url': request.build_absolute_uri('/payment-failure/'),
+            'cancel_url': request.build_absolute_uri('/payment-cancel/'),
+            'emi_option': 0,
+            'cus_name': user.name,
+            'cus_email': user.email,
+            'cus_phone': user.phone,
+            'cus_add1': 'Customer Address',
+            'cus_city': 'Dhaka',
+            'cus_country': 'Bangladesh',
+            'shipping_method': 'Courier',
+            'num_of_item': len(cart_items),
+            'product_name': 'Cart Items',
+            'product_category': 'General',
+            'product_profile': 'general'
+        }
+
+        response = sslcommez.createSession(post_body)
+        return redirect(response['GatewayPageURL'])
+
+
+# PaymentResultView for Handling Results
+class PaymentResultView(TemplateView):
+    template_name = 'payment_result.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update({
+            'tran_id': self.request.GET.get('tran_id'),
+            'status': self.request.GET.get('status'),
+            'amount': self.request.GET.get('amount'),
+            'currency': self.request.GET.get('currency'),
+            'payment_method': self.request.GET.get('card_type'),
+            'date': self.request.GET.get('tran_date'),
+            'cus_name': self.request.GET.get('cus_name')
+        })
+        return context
+
+
+
+# @login_required
+# def make_payment(request):
+#     cart_items = CartItem.objects.filter(user=request.user)
+#     if not cart_items.exists():
+#         messages.error(request, "Your cart is empty!")
+#         return redirect('home')
+
+#     total_amount = sum([item.total_price for item in cart_items])
+#     tran_id = str(uuid.uuid4())
+
+#     post_body = {
+#         'store_id': "examp66eead598747c",
+#         'store_passwd': "examp66eead598747c@ssl",
+#         'total_amount': total_amount,
+#         'currency': 'BDT',
+#         'tran_id': tran_id,
+#         'success_url': request.build_absolute_uri(reverse('payment_result')),
+#         'fail_url': request.build_absolute_uri(reverse('payment_result')),
+#         'cancel_url': request.build_absolute_uri(reverse('payment_result')),
+#         'emi_option': 0,
+#         'cus_name': request.user.username,
+#         'cus_email': request.user.email,
+#         'cus_add1': 'Dhaka',
+#         'cus_city': 'Dhaka',
+#         'cus_country': 'Bangladesh',
+#     }
+
+#     response = requests.post('https://sandbox.sslcommerz.com/gwprocess/v3/api.php', data=post_body)
+
+#     if response.status_code == 200:
+#         response_data = response.json()
+#         if 'GatewayPageURL' in response_data:
+#             return redirect(response_data['GatewayPageURL'])
+#         else:
+#             messages.error(request, "Invalid response from the payment gateway.")
+#             return redirect('cart')
 #     else:
-#         form = SignupForm()
+#         messages.error(request, "Payment initiation failed.")
+#         return redirect('cart')
 
-#     return render(request, 'login_23.html', {'form': form})
 
 
-# def animated_bg(request):
+# @csrf_exempt
+# def payment_result(request):
 #     if request.method == 'POST':
-#         form = SignupForm(request.POST)
-        
-#         if form.is_valid():
-#             # Save the user data (commit=True saves it to the database)
-#             user = form.save()
-#             return redirect('success_page')  # Replace with the URL of your success page
+#         status = request.POST.get('status', 'FAILED')
+#         failed_reason = request.POST.get('failedreason', 'No reason provided')
+#         tran_id = request.POST.get('tran_id', '')
 
-#     else:
-#         form = SignupForm()
+#         if status == 'VALID':
+#             # Payment successful
+#             messages.success(request, f"Payment was successful for transaction ID: {tran_id}")
+#             return render(request, 'payment_result.html', {'status': 'Success', 'username': request.user.username})
+#         else:
+#             # Payment failed or was canceled
+#             messages.error(request, f"Payment failed: {failed_reason}")
+#             return render(request, 'payment_result.html', {'status': 'Failed', 'username': request.user.username, 'reason': failed_reason})
 
-#     return render(request, 'animated_bg.html', {'form': form})
-
-
-def success(request):
-    context = {'key': 'value'}
-    return render(request, 'cart.html', context)
-
-def home_1(request):
-    context = {'key': 'value'}
-    return render(request, 'home.html', context)
-
-def shoping_cart(request):
-    context = {'key': 'value'}
-    return render(request, 'shoping-cart.html', context)
+#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-# def home(request):
-#     products = Product.objects.all()
-#     if request.method == 'POST':
-#         if 'signup' in request.POST:
-#             form = UserCreationForm(request.POST)
-#             if form.is_valid():
-#                 user = form.save()
-#                 login(request, user)
-#                 return redirect('home')
-#         elif 'login' in request.POST:
-#             pass
-#     else:
-#         form = UserCreationForm()
-#     return render(request, 'home.html', {'products': products, 'form': form})
+# @login_required
+# def add_to_cart(request, product_id):
+#     product = get_object_or_404(Product, id=product_id)
+#     cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+#     if not created:
+#         cart_item.quantity += 1
+#         cart_item.save()
+#     return redirect('home')
 
-@login_required
-def add_to_cart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
-    return redirect('home')
+# @login_required
+# def cart(request):
+#     cart_items = CartItem.objects.filter(user=request.user)
+#     total_amount = sum(item.total_price for item in cart_items)
+#     return render(request, 'cart.html', {'cart_items': cart_items, 'total_amount': total_amount})
 
-@login_required
-def cart(request):
-    cart_items = CartItem.objects.filter(user=request.user)
-    total_amount = sum(item.total_price for item in cart_items)
-    return render(request, 'cart.html', {'cart_items': cart_items, 'total_amount': total_amount})
-
-@login_required
-def update_cart(request, item_id):
-    cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
-    if 'increase' in request.POST:
-        cart_item.quantity += 1
-        cart_item.save()
-    elif 'decrease' in request.POST:
-        if cart_item.quantity > 1:
-            cart_item.quantity -= 1
-            cart_item.save()
-        else:
-            cart_item.delete()
-    return redirect('cart')
-
-@login_required
-def make_payment(request):
-    cart_items = CartItem.objects.filter(user=request.user)
-    if not cart_items.exists():
-        messages.error(request, "Your cart is empty!")
-        return redirect('home')
-
-    total_amount = sum([item.total_price for item in cart_items])
-    tran_id = str(uuid.uuid4())
-
-    post_body = {
-        'store_id': "examp66eead598747c",
-        'store_passwd': "examp66eead598747c@ssl",
-        'total_amount': total_amount,
-        'currency': 'BDT',
-        'tran_id': tran_id,
-        'success_url': request.build_absolute_uri(reverse('payment_result')),
-        'fail_url': request.build_absolute_uri(reverse('payment_result')),
-        'cancel_url': request.build_absolute_uri(reverse('payment_result')),
-        'emi_option': 0,
-        'cus_name': request.user.username,
-        'cus_email': request.user.email,
-        'cus_add1': 'Dhaka',
-        'cus_city': 'Dhaka',
-        'cus_country': 'Bangladesh',
-    }
-
-    # response = requests.post('https://sandbox.sslcommerz.com/gwprocess/v3/api.php', data=post_body)
-
-    # if response.status_code == 200:
-    #     response_data = response.json()
-    #     if 'GatewayPageURL' in response_data:
-    #         return redirect(response_data['GatewayPageURL'])
-    #     else:
-    #         messages.error(request, "Invalid response from the payment gateway.")
-    #         return redirect('cart')
-    # else:
-    #     messages.error(request, "Payment initiation failed.")
-    #     return redirect('cart')
-
-
-
-@csrf_exempt
-def payment_result(request):
-    if request.method == 'POST':
-        status = request.POST.get('status', 'FAILED')
-        failed_reason = request.POST.get('failedreason', 'No reason provided')
-        tran_id = request.POST.get('tran_id', '')
-
-        if status == 'VALID':
-            # Payment successful
-            messages.success(request, f"Payment was successful for transaction ID: {tran_id}")
-            return render(request, 'payment_result.html', {'status': 'Success', 'username': request.user.username})
-        else:
-            # Payment failed or was canceled
-            messages.error(request, f"Payment failed: {failed_reason}")
-            return render(request, 'payment_result.html', {'status': 'Failed', 'username': request.user.username, 'reason': failed_reason})
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+# @login_required
+# def update_cart(request, item_id):
+#     cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
+#     if 'increase' in request.POST:
+#         cart_item.quantity += 1
+#         cart_item.save()
+#     elif 'decrease' in request.POST:
+#         if cart_item.quantity > 1:
+#             cart_item.quantity -= 1
+#             cart_item.save()
+#         else:
+#             cart_item.delete()
+#     return redirect('cart')
 
 
 
 
 # Further.....
-
+class SubscribeView(View):
+    def post(self, request, *args, **kwargs):
+        email = request.POST.get('email')
+        if email:
+            if not Subscription.objects.filter(email=email).exists():
+                Subscription.objects.create(email=email)
+                return JsonResponse({'status': 'success', 'message': "Thank you for subscribing!"})
+            else:
+                return JsonResponse({'status': 'info', 'message': "You are already subscribed."})
+        else:
+            return JsonResponse({'status': 'error', 'message': "Please enter a valid email."})
 
 
 

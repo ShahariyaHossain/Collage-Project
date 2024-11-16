@@ -163,3 +163,63 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.users.name} on {self.blog.title}"
+
+# =============== Team Members ===============
+class TeamMember(models.Model):
+    name = models.CharField(max_length=100, help_text="Name of the team member")
+    role = models.CharField(max_length=250, help_text="Role of the team member")
+    photo = models.ImageField(
+        upload_to='team_photos/', 
+        default='team_photos/team_default-1.jpg', 
+        help_text="Team member image", 
+        blank=True, 
+        null=True
+    )
+    facebook = models.URLField(blank=True, null=True, help_text="Facebook account of the team member")
+    linkedin = models.URLField(blank=True, null=True, help_text="LinkedIn account of the team member")
+    github = models.URLField(blank=True, null=True, help_text="GitHub account of the team member")
+
+    def __str__(self):
+        return f"{self.name} - {self.role}"
+
+
+# =============== Contact Messages ===============
+class ContactMessage(models.Model):
+    name = models.CharField(max_length=100, help_text="Name of the person sending the message")
+    email = models.EmailField(help_text="Email of the person sending the message")
+    phone = models.CharField(max_length=15, help_text="Phone number of the person sending the message")
+    subject = models.CharField(max_length=200, help_text="Subject of the message")
+    message = models.TextField(help_text="The message content")
+    created_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the message was created")
+
+    def __str__(self):
+        return f"Message from {self.name} - {self.subject}"
+
+
+# =============== Contact Details ===============
+class ContactDetails(models.Model):
+    shop_address = models.TextField(help_text="Shop address")
+    shop_hours = models.TextField(help_text="Operating hours of the shop")
+    phone = models.CharField(max_length=15, help_text="Shop phone number")
+    email = models.EmailField(help_text="Shop contact email")
+    google_map_embed = models.TextField(help_text="Embed link for Google Maps")
+
+    # Social Media Links
+    facebook = models.URLField(blank=True, null=True, help_text="Facebook URL")
+    x = models.URLField(blank=True, null=True, help_text="X (formerly Twitter) URL")  # Renamed from Twitter
+    instagram = models.URLField(blank=True, null=True, help_text="Instagram URL")
+    linkedin = models.URLField(blank=True, null=True, help_text="LinkedIn URL")
+    github = models.URLField(blank=True, null=True, help_text="GitHub URL")  # Replaces Dribbble
+
+    def __str__(self):
+        return "Contact Details"
+
+
+
+# Subscription
+class Subscription(models.Model):
+    email = models.EmailField(unique=True, help_text="Email address of the subscriber")
+    subscribed_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the user subscribed")
+
+    def __str__(self):
+        return self.email

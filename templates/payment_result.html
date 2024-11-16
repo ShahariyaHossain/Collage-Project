@@ -1,0 +1,80 @@
+<!-- ========================= Include extend & static title tag =================================== -->
+{% extends 'base.html' %}
+{% load static %}
+
+<!-- ============================= Iclude child template's title ================================== -->
+{% block title %}
+  Payment - Result
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ======================= Extra meta information, stylesheet links, etc. ======================== -->
+<!-- =============================================================================================== -->
+{% block extra_head %}
+  <!-- For additional child-specific styles or scripts -->
+{% endblock %}
+
+<!-- =============================================================================================== -->
+<!-- ============================== Start of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+{% block content %}
+  <!-- =============================================================================================== -->
+  <!-- ============================== Start of Home Page Slider ====================================== -->
+  <!-- =============================================================================================== -->
+  <!-- =============================== Dynamic Home Page Slider ====================================== -->
+  <!-- breadcrumb-section -->
+  <div class="breadcrumb-section breadcrumb-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2 text-center">
+          <div class="breadcrumb-text">
+            <p>Thank You</p>
+            <h1><span class="orange-text">Payment</span> Result</h1>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end breadcrumb section -->
+  <!-- Payment Result Section -->
+  <div class="contact-from-section mt-150 mb-150">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-8 mb-5 mb-lg-0">
+          <div class="form-title">
+            <h1>Payment Result</h1>
+            <p>
+              <strong>Transaction ID:</strong> {{ tran_id }}
+            </p>
+            <p>
+              <strong>Status:</strong> {{ status }}
+            </p>
+            <p>
+              <strong>Amount:</strong> {{ amount }} {{ currency }}
+            </p>
+            <p>
+              <strong>Payment Method:</strong> {{ payment_method }}
+            </p>
+            <p>
+              <strong>Customer Name:</strong> {{ cus_name }}
+            </p>
+            <p>
+              <strong>Date:</strong> {{ date }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- End Payment Result Section -->
+{% endblock %}
+<!-- =============================================================================================== -->
+<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- =============================================================================================== -->
+
+<!-- =============================================================================================== -->
+<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- =============================================================================================== -->
+{% block extra_scripts %}
+  <!-- For child-specific JavaScript -->
+{% endblock %}

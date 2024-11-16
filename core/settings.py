@@ -28,6 +28,57 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# # Determine the environment: Development or Production
+# DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+# # Allowed hosts configuration
+# # Include both local and production domains
+# ALLOWED_HOSTS = [
+#     'localhost',          # Local development
+#     '127.0.0.1',          # Local development
+#     '[::1]',              # IPv6 localhost
+#     'www.fruitkha.com',   # Production domain (with www)
+#     'fruitkha.com',       # Production domain (without www)
+# ]
+
+# # Trust these origins for CSRF protection
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://www.fruitkha.com',  # Production with HTTPS
+#     'https://fruitkha.com',      # Production with HTTPS
+# ]
+
+# # Secure settings for production only
+# if not DEBUG:
+#     # Redirect all HTTP traffic to HTTPS
+#     SECURE_SSL_REDIRECT = True
+
+#     # Use secure cookies for session and CSRF
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
+
+#     # Enable HTTP Strict Transport Security (HSTS)
+#     SECURE_HSTS_SECONDS = 31536000  # Force HTTPS for one year
+#     SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Apply HSTS to subdomains
+#     SECURE_HSTS_PRELOAD = True  # Allow domain to be preloaded into browsers
+
+#     # Mitigate content-type sniffing vulnerabilities
+#     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+#     # Prevent the site from being displayed in an iframe
+#     X_FRAME_OPTIONS = 'DENY'
+
+# else:
+#     # In development, disable strict HTTPS enforcement
+#     SECURE_SSL_REDIRECT = False
+#     SESSION_COOKIE_SECURE = False
+#     CSRF_COOKIE_SECURE = False
+
+# # Additional security measures applicable in both environments
+# # Prevent browsers from guessing MIME types
+# SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# # Prevent clickjacking by disallowing iframe embedding
+# X_FRAME_OPTIONS = 'DENY'
 
 # Application definition
 
@@ -65,6 +116,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'fruitkha.context_processors.countdown_timer',
+                'fruitkha.context_processors.footer_context',
             ],
         },
     },
@@ -146,3 +198,10 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = "mdshahariyahossain03@gmail.com"
 EMAIL_HOST_PASSWORD = "rucd lhax npzy phyd"  # App password
+
+# SSLCommerz for Payment Gateway
+SSLCOMMERZ_SETTINGS = {
+    'store_id': 'examp66eead598747c',
+    'store_pass': 'examp66eead598747c@ssl',
+    'issandbox': True  # Change to False in production
+}

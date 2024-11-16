@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Account, Product, CartItem, Slider, Testimonial, Blog, Comment
+from .models import Account, Product, CartItem, Slider, Testimonial, Blog, Comment, TeamMember, ContactMessage, ContactDetails, Subscription
 
 # Registering the Account model
 @admin.register(Account)
@@ -51,3 +51,37 @@ class CommentAdmin(admin.ModelAdmin):
     search_fields = ('users__name', 'comment', 'blog__title')  # Allow searching by user name, comment, and blog title
     list_filter = ('date', 'blog')  # Filter comments by date and associated blog
     autocomplete_fields = ['users', 'blog', 'parent']  # Enable autocomplete for foreign keys
+
+# =============== Team Member Admin ===============
+@admin.register(TeamMember)
+class TeamMemberAdmin(admin.ModelAdmin):
+    list_display = ('name', 'role', 'facebook', 'linkedin', 'github')  # Display these fields in list view
+    search_fields = ('name', 'role')  # Allow searching by name and role
+    list_filter = ('role',)  # Filter by role
+    list_per_page = 20  # Paginate with 20 items per page
+
+
+# =============== Contact Message Admin ===============
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'phone', 'subject', 'created_at')  # Display these fields in list view
+    search_fields = ('name', 'email', 'subject')  # Allow searching by name, email, and subject
+    list_filter = ('created_at',)  # Filter by creation date
+    date_hierarchy = 'created_at'  # Adds a date hierarchy for filtering
+
+
+# =============== Contact Details Admin ===============
+@admin.register(ContactDetails)
+class ContactDetailsAdmin(admin.ModelAdmin):
+    list_display = ('shop_address', 'phone', 'email')  # Display these fields in list view
+    search_fields = ('shop_address', 'phone', 'email')  # Allow searching by address, phone, and email
+    list_per_page = 10  # Paginate with 10 items per page
+
+
+# Subscription Admin
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('email', 'subscribed_at')  # Fields displayed in the admin panel
+    search_fields = ('email',)  # Enable search by email
+    list_filter = ('subscribed_at',)  # Filter by subscription date
