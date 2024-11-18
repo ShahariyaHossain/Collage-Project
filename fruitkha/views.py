@@ -337,6 +337,7 @@ class AboutView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['team_members'] = TeamMember.objects.all()  # Fetch all team members
+        context['testimonials'] = Testimonial.objects.all()  # Fetch all testimonials
         return context
 
 # ===============================================================================================
@@ -398,7 +399,7 @@ class ContactView(TemplateView):
         return redirect('contact')
 
 # ===============================================================================================
-# ===================================  Handling User Login  =====================================
+# ===================================  Handling Payment  =====================================
 # ===============================================================================================
 
 class PaymentInitView(View):
