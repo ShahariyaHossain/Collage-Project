@@ -1522,7 +1522,7 @@ input[type="submit"] {
 }
 
 .homepage-slider {
-  height: 100vh;
+  height: 100%;
 }
 
 .homepage-slider div {
