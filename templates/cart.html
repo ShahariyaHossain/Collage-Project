@@ -19,9 +19,8 @@
 <!-- =============================================================================================== -->
 {% block content %}
   <!-- =============================================================================================== -->
-  <!-- ============================== Start of Home Page Slider ====================================== -->
+  <!-- ================================= breadcrumb-section ========================================== -->
   <!-- =============================================================================================== -->
-
   <!-- breadcrumb-section -->
   <div class="breadcrumb-section breadcrumb-bg">
     <div class="container">
@@ -37,10 +36,25 @@
   </div>
   <!-- end breadcrumb section -->
 
+  <!-- =============================================================================================== -->
+  <!-- =================================== Pop-Up Messages =========================================== -->
+  <!-- =============================================================================================== -->
+  <div id="message-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <p id="modal-message"></p>
+    </div>
+  </div>
+
+  <!-- =============================================================================================== -->
+  <!-- ================================= Start of Cart Section ======================================= -->
+  <!-- =============================================================================================== -->
+
   <!-- cart -->
   <div class="cart-section mt-150 mb-150">
     <div class="container">
       <div class="row">
+        <!-- ================================= Products Section ======================================= -->
         <div class="col-lg-8 col-md-12">
           <div class="cart-table-wrap">
             <table class="cart-table">
@@ -68,7 +82,7 @@
                     <td class="product-quantity">
                       <input type="number" min="1" class="update-quantity" data-id="{{ item.id }}" value="{{ item.quantity }}" />
                     </td>
-                    <td class="total-price">{{ item.total_price }}৳</td>
+                    <td class="total-price">{{ item.total }}৳</td>
                   </tr>
                 {% empty %}
                   <tr>
@@ -79,7 +93,7 @@
             </table>
           </div>
         </div>
-
+        <!-- ================================= Price Section ======================================= -->
         <div class="col-lg-4">
           <div class="total-section">
             <table class="total-table">
@@ -111,7 +125,7 @@
               </tbody>
             </table>
           </div>
-
+          <!-- ================================= Coupon Section ======================================= -->
           <div class="coupon-section">
             <h3>Apply Coupon</h3>
             <div class="coupon-form-wrap">
@@ -126,7 +140,12 @@
             </div>
           </div>
           <div class="cart-buttons">
-            <a href="#" class="boxed-btn black">Check Out</a>
+            <!-- Place Order Button -->
+            <form id="place-order-form" method="post" action="{% url 'init_payment' %}">
+              {% csrf_token %}
+              <button type="submit" class="cart-btn add-to-cart">Place Order</button>
+            </form>
+            <!-- <a href="#" class="boxed-btn black">Check Out</a> -->
           </div>
         </div>
       </div>
@@ -134,15 +153,15 @@
   </div>
   <!-- end cart -->
   <!-- =============================================================================================== -->
-  <!-- =================================== End of Latest News ======================================== -->
+  <!-- ================================= Start of Cart Section ======================================= -->
   <!-- =============================================================================================== -->
 {% endblock %}
 <!-- =============================================================================================== -->
-<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- ================================= End of Main Bloock Content ================================== -->
 <!-- =============================================================================================== -->
 
 <!-- =============================================================================================== -->
-<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- ====================== For additional child-specific styles or scripts ======================== -->
 <!-- =============================================================================================== -->
 {% block extra_scripts %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -155,42 +174,98 @@
         $('#total').text(data.total + '৳')
       }
     
+      function removeRow(id) {
+        $(`tr[data-id="${id}"]`).remove() // Remove the row for the given product ID
+      }
+    
+      function updateRowTotal(id, totalPrice) {
+        $(`tr[data-id="${id}"] .total-price`).text(totalPrice + '৳')
+      }
+    
+      function showMessage(message) {
+        $('#modal-message').text(message)
+        $('#message-modal').fadeIn()
+    
+        // Auto-hide the modal after 2 seconds
+        setTimeout(() => {
+          $('#message-modal').fadeOut()
+        }, 2000)
+      }
+    
+      function hideMessage() {
+        $('#message-modal').fadeOut()
+      }
+    
+      // Close the modal when clicking the close button or outside the modal
+      $('.close-modal').click(hideMessage)
+      $(window).click(function (event) {
+        if ($(event.target).is('#message-modal')) {
+          hideMessage()
+        }
+      })
+    
       // Update Quantity
       $(document).on('change', '.update-quantity', function () {
-        let id = $(this).data('id')
-        let quantity = $(this).val()
+        const id = $(this).data('id')
+        const quantity = $(this).val()
+    
         $.ajax({
           url: '{% url "cart" %}',
           method: 'POST',
           data: {
             action: 'update',
-            id: id,
+            product_id: id,
             quantity: quantity,
             csrfmiddlewaretoken: '{{ csrf_token }}'
           },
-          success: updateCart
+          success: function (response) {
+            updateCart(response)
+            updateRowTotal(id, response.updated_items[id].total) // Dynamically update row total
+            // alert('Cart updated successfully!') // Keep this simple alert
+          },
+          error: function (xhr) {
+            console.error('Error updating cart:', xhr.responseText)
+            // alert('Failed to update cart.')
+            showMessage('Failed to update cart.')
+          }
         })
       })
     
       // Remove Item
       $(document).on('click', '.remove-item', function () {
-        let id = $(this).data('id')
+        const id = $(this).data('id')
+    
         $.ajax({
           url: '{% url "cart" %}',
           method: 'POST',
           data: {
             action: 'remove',
-            id: id,
+            product_id: id,
             csrfmiddlewaretoken: '{{ csrf_token }}'
           },
-          success: updateCart
+          success: function (response) {
+            removeRow(id)
+            updateCart(response) // Update totals after removal
+    
+            if ($('#cart-items tr').length === 0) {
+              $('#cart-items').html('<tr><td colspan="6">No items in the cart.</td></tr>')
+            }
+    
+            showMessage('Item removed from cart.') // Use modal for remove
+          },
+          error: function (xhr) {
+            console.error('Error removing item:', xhr.responseText)
+            // alert('Failed to remove item.')
+            showMessage('Failed to remove item.')
+          }
         })
       })
     
       // Apply Coupon
       $('#apply-coupon').on('submit', function (e) {
         e.preventDefault()
-        let coupon = $('#coupon-code').val()
+        const coupon = $('#coupon-code').val()
+    
         $.ajax({
           url: '{% url "cart" %}',
           method: 'POST',
@@ -199,7 +274,15 @@
             coupon: coupon,
             csrfmiddlewaretoken: '{{ csrf_token }}'
           },
-          success: updateCart
+          success: function (response) {
+            updateCart(response)
+            showMessage('Coupon applied successfully!') // Use modal for coupon application
+          },
+          error: function (xhr) {
+            console.error('Error applying coupon:', xhr.responseText)
+            // alert('Failed to apply coupon.')
+            showMessage('Failed to apply coupon.')
+          }
         })
       })
     })

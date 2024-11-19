@@ -18,6 +18,9 @@
 <!-- ============================== Start of Main Bloock Content ================================== -->
 <!-- =============================================================================================== -->
 {% block content %}
+  <!-- =============================================================================================== -->
+  <!-- ================================= breadcrumb-section ========================================== -->
+  <!-- =============================================================================================== -->
   <!-- breadcrumb-section -->
   <div class="breadcrumb-section breadcrumb-bg">
     <div class="container">
@@ -32,6 +35,16 @@
     </div>
   </div>
   <!-- end breadcrumb section -->
+
+  <!-- =============================================================================================== -->
+  <!-- =================================== Pop-Up Messages =========================================== -->
+  <!-- =============================================================================================== -->
+  <div id="message-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <p id="modal-message"></p>
+    </div>
+  </div>
 
   <!-- =============================================================================================== -->
   <!-- =============================== Start of Products list ======================================== -->
@@ -73,13 +86,18 @@
               <p class="product-price">
                 <span>Per Kg</span> {{ product.price }}৳
               </p>
-              <a href="{% url 'cart' %}" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a>
+              <button class="cart-btn add-to-cart" data-product-id="{{ product.id }}"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
             </div>
           </div>
         {% empty %}
           <p>No products available.</p>
         {% endfor %}
       </div>
+
+      <!-- Ensure the CSRF token is available in a hidden form -->
+      <form style="display: none;">
+        {% csrf_token %}
+      </form>
 
       <!-- Pagination -->
       <div class="row">
@@ -130,6 +148,8 @@
 {% block extra_scripts %}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js"></script>
+
   <script>
     $(document).ready(function () {
       // Initialize Isotope
@@ -149,6 +169,55 @@
       // Recalculate layout after images have loaded
       $grid.imagesLoaded().progress(function () {
         $grid.isotope('layout')
+      })
+    
+      // Add to Cart functionality
+      $(document).on('click', '.add-to-cart', function () {
+        console.log('Add to Cart button clicked') // Debug log
+        const productId = $(this).data('product-id')
+        const csrfToken = $('form input[name="csrfmiddlewaretoken"]').val()
+        function showMessage(message) {
+          $('#modal-message').text(message)
+          $('#message-modal').fadeIn()
+    
+          // Auto-hide the modal after 2 seconds
+          setTimeout(() => {
+            $('#message-modal').fadeOut()
+          }, 2000)
+        }
+    
+        function hideMessage() {
+          $('#message-modal').fadeOut()
+        }
+    
+        // Close the modal when clicking the close button or outside the modal
+        $('.close-modal').click(hideMessage)
+        $(window).click(function (event) {
+          if ($(event.target).is('#message-modal')) {
+            hideMessage()
+          }
+        })
+    
+        $.ajax({
+          url: '{% url "cart" %}',
+          method: 'POST',
+          data: {
+            action: 'add',
+            product_id: productId,
+            quantity: 1,
+            csrfmiddlewaretoken: csrfToken
+          },
+          success: function (response) {
+            console.log('AJAX success:', response)
+            // alert('Product added successfully!')
+            showMessage('Product added successfully!')
+          },
+          error: function (xhr, status, error) {
+            console.error('AJAX error:', xhr.responseText)
+            // alert('Failed to add product to cart.')
+            showMessage('Failed to add product to cart.')
+          }
+        })
       })
     })
   </script>

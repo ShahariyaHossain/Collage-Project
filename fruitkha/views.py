@@ -17,7 +17,7 @@ import uuid
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-# from requests
+import requests
 
 # ===============================================================================================
 # ============================  Import Shop Models & Forms  =====================================
@@ -184,17 +184,98 @@ class SingleProductView(DetailView):
         return context
 
 
-class CartView(LoginRequiredMixin, TemplateView):
+# class CartView(TemplateView):
+#     template_name = 'cart.html'
+#     # login_url = '/login/'
+
+#     def get_context_data(self, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         # cart_items = CartItem.objects.filter(accounts=self.request.user)
+        
+#         # Ensure the request user is an instance of Account
+#         user = self.request.user
+#         account = None
+
+#         if isinstance(user, Account):
+#             account = user
+#             cart_items = CartItem.objects.filter(accounts=account)
+#         else:
+#             cart_items = []  # Unauthenticated or non-Account user sees an empty cart
+
+#         # Calculate subtotal, discount, and total for the cart
+#         subtotal = sum(item.products.price * item.quantity for item in cart_items)
+#         discount = sum(item.discount for item in cart_items)
+#         total = subtotal - discount
+
+#         context.update({
+#             'cart_items': cart_items,
+#             'subtotal': subtotal,
+#             'discount': discount,
+#             'total': total,
+#         })
+#         return context
+
+#     def post(self, request, *args, **kwargs):
+#         action = request.POST.get('action')
+#         cart_item_id = request.POST.get('id')
+#         coupon_code = request.POST.get('coupon', '')
+        
+#         # Ensure the request user is an instance of Account
+#         user = request.user
+#         if not isinstance(user, Account):
+#             return JsonResponse({'error': 'Invalid user'}, status=400)
+
+#         cart_items = CartItem.objects.filter(accounts=user)
+
+#         # Handle 'update' action: Update cart item quantity
+#         if action == 'update':
+#             cart_item = get_object_or_404(CartItem, id=cart_item_id)
+#             cart_item.quantity = int(request.POST.get('quantity', 1))
+#             cart_item.calculate_totals()
+
+#         # Handle 'remove' action: Remove the item from the cart
+#         elif action == 'remove':
+#             cart_item = get_object_or_404(CartItem, id=cart_item_id)
+#             cart_item.delete()
+
+#         # Handle 'apply_coupon' action: Apply coupon logic
+#         elif action == 'apply_coupon':
+#             # Simulate coupon logic
+#             cart_items = CartItem.objects.filter(accounts=request.user)
+#             for cart_item in cart_items:
+#                 if coupon_code == 'DISCOUNT10':  # Replace with your coupon validation logic
+#                     cart_item.discount = min(cart_item.subtotal, Decimal('10.00'))
+#                 else:
+#                     cart_item.discount = Decimal('0.00')
+#                 cart_item.calculate_totals()
+
+#         # Refresh cart data and return updated context
+#         # cart_items = CartItem.objects.filter(accounts=request.user)
+#         subtotal = sum(item.products.price * item.quantity for item in cart_items)
+#         discount = sum(item.discount for item in cart_items)
+#         total = subtotal - discount
+
+#         data = {
+#             'subtotal': subtotal,
+#             'discount': discount,
+#             'total': total,
+#         }
+
+#         # Return updated data as a JSON response
+#         return JsonResponse(data)
+
+class CartView(TemplateView):
     template_name = 'cart.html'
-    login_url = '/login/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cart_items = CartItem.objects.filter(accounts=self.request.user)
-        
-        # Calculate subtotal, discount, and total for the cart
-        subtotal = sum(item.products.price * item.quantity for item in cart_items)
-        discount = sum(item.discount for item in cart_items)
+
+        # Use session-based cart only for unauthorized users
+        session_cart = self.request.session.get('cart', [])
+        cart_items = self._get_session_cart_items(session_cart)
+
+        subtotal = sum(item['products'].price * item['quantity'] for item in cart_items)
+        discount = sum(item['discount'] for item in cart_items)
         total = subtotal - discount
 
         context.update({
@@ -207,45 +288,121 @@ class CartView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         action = request.POST.get('action')
-        cart_item_id = request.POST.get('id')
-        coupon_code = request.POST.get('coupon', '')
+        product_id = request.POST.get('product_id')
+        quantity = int(request.POST.get('quantity', 1))
+        session_cart = request.session.get('cart', [])
 
-        # Handle 'update' action: Update cart item quantity
-        if action == 'update':
-            cart_item = get_object_or_404(CartItem, id=cart_item_id)
-            cart_item.quantity = int(request.POST.get('quantity', 1))
-            cart_item.calculate_totals()
+        if not product_id and action in ['remove', 'update', 'add']:
+            return JsonResponse({'error': 'Product ID is required for this action'}, status=400)
 
-        # Handle 'remove' action: Remove the item from the cart
+        if action == 'add':
+            return self._add_to_cart(request, product_id, quantity, session_cart)
+        elif action == 'update':
+            return self._update_cart(request, product_id, quantity, session_cart)
         elif action == 'remove':
-            cart_item = get_object_or_404(CartItem, id=cart_item_id)
-            cart_item.delete()
-
-        # Handle 'apply_coupon' action: Apply coupon logic
+            return self._remove_from_cart(request, product_id, session_cart)
         elif action == 'apply_coupon':
-            # Simulate coupon logic
-            cart_items = CartItem.objects.filter(accounts=request.user)
-            for cart_item in cart_items:
-                if coupon_code == 'DISCOUNT10':  # Replace with your coupon validation logic
-                    cart_item.discount = min(cart_item.subtotal, Decimal('10.00'))
-                else:
-                    cart_item.discount = Decimal('0.00')
-                cart_item.calculate_totals()
+            coupon_code = request.POST.get('coupon', '')
+            return self._apply_coupon(request, coupon_code, session_cart)
 
-        # Refresh cart data and return updated context
-        cart_items = CartItem.objects.filter(accounts=request.user)
-        subtotal = sum(item.products.price * item.quantity for item in cart_items)
-        discount = sum(item.discount for item in cart_items)
-        total = subtotal - discount
+        return JsonResponse({'error': 'Invalid action'}, status=400)
 
-        data = {
-            'subtotal': subtotal,
-            'discount': discount,
-            'total': total,
+    def _get_session_cart_items(self, session_cart):
+        """Return session cart items in proper format."""
+        return [
+            {
+                'id': item['product_id'],
+                'products': Product.objects.get(id=item['product_id']),
+                'quantity': item['quantity'],
+                'discount': Decimal(item.get('discount', 0)),
+                'subtotal': Decimal(item['subtotal']),
+                'total': Decimal(item['total']),
+            }
+            for item in session_cart
+        ]
+
+    def _add_to_cart(self, request, product_id, quantity, session_cart):
+        """Handles adding products to the cart."""
+        product = get_object_or_404(Product, id=product_id)
+
+        for item in session_cart:
+            if item['product_id'] == product.id:
+                item['quantity'] += quantity
+                item['subtotal'] = float(product.price * item['quantity'])
+                item['total'] = item['subtotal'] - float(item.get('discount', Decimal('0.00')))
+                break
+        else:
+            session_cart.append({
+                'product_id': product.id,
+                'quantity': quantity,
+                'subtotal': float(product.price * quantity),
+                'total': float(product.price * quantity),
+                'discount': 0.0,
+            })
+        request.session['cart'] = session_cart
+
+        return self._refresh_cart_context()
+
+    def _update_cart(self, request, product_id, quantity, session_cart):
+        """Handles updating product quantities in the cart."""
+        for item in session_cart:
+            if item['product_id'] == int(product_id):
+                item['quantity'] = quantity
+                item['subtotal'] = float(Product.objects.get(id=product_id).price * quantity)
+                item['total'] = item['subtotal'] - float(item.get('discount', 0))
+                break
+        request.session['cart'] = session_cart
+
+        return self._refresh_cart_context()
+
+    def _remove_from_cart(self, request, product_id, session_cart):
+        """Handles removing products from the cart."""
+        session_cart = [item for item in session_cart if item['product_id'] != int(product_id)]
+        request.session['cart'] = session_cart
+
+        return self._refresh_cart_context()
+
+    def _apply_coupon(self, request, coupon_code, session_cart):
+        """Handles applying a coupon to the cart."""
+        discount_amount = 10.0 if coupon_code == 'DISCOUNT10' else 0.0
+
+        for item in session_cart:
+            item['discount'] = discount_amount
+            item['total'] = item['subtotal'] - discount_amount
+        request.session['cart'] = session_cart
+
+        return self._refresh_cart_context()
+
+    def _refresh_cart_context(self):
+        cart_items, subtotal, discount, total = self._get_cart_data()
+
+        # Generate updated items for the frontend
+        updated_items = {
+            str(item['id']): {
+                'total': str(item['total']),
+            }
+            for item in cart_items
         }
 
-        # Return updated data as a JSON response
-        return JsonResponse(data)
+        return JsonResponse({
+            'subtotal': str(subtotal),
+            'discount': str(discount),
+            'total': str(total),
+            'updated_items': updated_items,
+        })
+
+
+    def _get_cart_data(self):
+        """Fetch current cart items and totals."""
+        session_cart = self.request.session.get('cart', [])
+        cart_items = self._get_session_cart_items(session_cart)
+
+        subtotal = sum(item['products'].price * item['quantity'] for item in cart_items)
+        discount = sum(item['discount'] for item in cart_items)
+        total = subtotal - discount
+
+        return cart_items, subtotal, discount, total
+
 
 
 
@@ -404,14 +561,26 @@ class ContactView(TemplateView):
 
 class PaymentInitView(View):
     def post(self, request, *args, **kwargs):
-        user = request.user
-        cart_items = CartItem.objects.filter(accounts=user)
+        # Check if user is authenticated and is an Account instance
+        if isinstance(request.user, Account):
+            cart_items = CartItem.objects.filter(accounts=request.user)
+        else:
+            # Use session-based cart for non-Account users
+            session_cart = request.session.get('cart', [])
+            cart_items = [
+                {
+                    'subtotal': Decimal(item['subtotal']),
+                    'discount': Decimal(item['discount']),
+                }
+                for item in session_cart
+            ]
 
-        if not cart_items.exists():
+        # Ensure cart has items
+        if not cart_items:
             return JsonResponse({'error': 'No items in your cart.'}, status=400)
 
         # Calculate total amount
-        total_amount = sum((item.subtotal - item.discount) for item in cart_items) + 50
+        total_amount = sum((item['subtotal'] - item['discount']) for item in cart_items) + Decimal('50.00')
 
         # Generate unique transaction ID
         tran_id = str(uuid.uuid4())
@@ -420,18 +589,28 @@ class PaymentInitView(View):
         ssl_settings = settings.SSLCOMMERZ_SETTINGS
         sslcommez = SSLCOMMERZ(ssl_settings)
 
+        # All payment results point to the same view, differentiated by query parameters
+        result_url = request.build_absolute_uri(reverse('payment_result'))
+        
+        """
+        If you use dummy sslcommerz_lib,
+        then turn in the two store_id and store password from post_body,
+        otherwise turn off them
+        """
         # Payment information
         post_body = {
+            'store_id': "examp66eead598747c",
+            'store_passwd': "examp66eead598747c@ssl",
             'total_amount': str(total_amount),
             'currency': 'BDT',
             'tran_id': tran_id,
-            'success_url': request.build_absolute_uri('/payment-success/'),
-            'fail_url': request.build_absolute_uri('/payment-failure/'),
-            'cancel_url': request.build_absolute_uri('/payment-cancel/'),
+            'success_url': result_url,
+            'fail_url': result_url,
+            'cancel_url': result_url,
             'emi_option': 0,
-            'cus_name': user.name,
-            'cus_email': user.email,
-            'cus_phone': user.phone,
+            'cus_name': request.user.name if isinstance(request.user, Account) else 'Guest',
+            'cus_email': request.user.email if isinstance(request.user, Account) else 'guest@example.com',
+            'cus_phone': request.user.phone if isinstance(request.user, Account) else '0000000000',
             'cus_add1': 'Customer Address',
             'cus_city': 'Dhaka',
             'cus_country': 'Bangladesh',
@@ -441,27 +620,74 @@ class PaymentInitView(View):
             'product_category': 'General',
             'product_profile': 'general'
         }
-
+        """ turn in this two line if you use the real sslcommer_lib
         response = sslcommez.createSession(post_body)
         return redirect(response['GatewayPageURL'])
+        
+        # and if you use dummy sslcommerz_lib, the turn in the below code block
+        """
+        response = requests.post('https://sandbox.sslcommerz.com/gwprocess/v3/api.php', data=post_body)
 
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                gateway_url = response_data.get('GatewayPageURL')
+                if gateway_url:
+                    return redirect(gateway_url)
+                else:
+                    messages.error(request, "Invalid response from the payment gateway.")
+            except ValueError:
+                messages.error(request, "Failed to parse response from the payment gateway.")
+        else:
+            messages.error(request, "Payment initiation failed. Please try again later.")
+            return redirect('cart')
 
-# PaymentResultView for Handling Results
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.http import JsonResponse
+from django.contrib import messages
+from django.shortcuts import render
+from django.views.generic import TemplateView
+
+@method_decorator(csrf_exempt, name='dispatch')
 class PaymentResultView(TemplateView):
     template_name = 'payment_result.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update({
-            'tran_id': self.request.GET.get('tran_id'),
-            'status': self.request.GET.get('status'),
-            'amount': self.request.GET.get('amount'),
-            'currency': self.request.GET.get('currency'),
-            'payment_method': self.request.GET.get('card_type'),
-            'date': self.request.GET.get('tran_date'),
-            'cus_name': self.request.GET.get('cus_name')
-        })
-        return context
+    def post(self, request, *args, **kwargs):
+        # Extract necessary data from POST request
+        status = request.POST.get('status', 'FAILED')
+        failed_reason = request.POST.get('failedreason', 'No reason provided')
+        tran_id = request.POST.get('tran_id', '')
+        amount = request.POST.get('amount', 'N/A')
+        currency = request.POST.get('currency', 'N/A')
+        payment_method = request.POST.get('card_type', 'N/A')
+        date = request.POST.get('tran_date', 'N/A')
+        cus_name = request.POST.get('cus_name', 'Guest')
+
+        # Prepare context for the template
+        context = {
+            'status': 'Success' if status == 'VALID' else 'Failed',
+            'tran_id': tran_id,
+            'reason': failed_reason if status != 'VALID' else None,
+            'username': request.user.username if request.user.is_authenticated else cus_name,
+            'amount': amount,
+            'currency': currency,
+            'payment_method': payment_method,
+            'date': date,
+        }
+
+        # Provide user feedback based on payment status
+        if status == 'VALID':
+            messages.success(request, f"Payment was successful for transaction ID: {tran_id}")
+        else:
+            messages.error(request, f"Payment failed: {failed_reason}")
+
+        return render(request, self.template_name, context)
+
+    def get(self, request, *args, **kwargs):
+        # Handle cases where GET requests might be sent
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 
 

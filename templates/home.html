@@ -46,60 +46,19 @@
     {% endfor %}
   </div>
 
-  {% comment %}
-  <!-- =============================== Static Home Page Slider ======================================= -->
-  <div class="homepage-slider">
-    <!-- single home slider -->
-    <div class="single-homepage-slider homepage-bg-1">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12 col-lg-7 offset-lg-1 offset-xl-0">
-            <div class="hero-text">
-              <div class="hero-text-tablecell">
-                <p class="subtitle">Fresh & Organic</p>
-                <h1>Delicious Seasonal Fruits</h1>
-                <div class="hero-btns">
-                  <a href="shop.html" class="boxed-btn">Fruit Collection</a>
-                  <a href="contact.html" class="bordered-btn">Contact Us</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- single home slider -->
-    <div class="single-homepage-slider homepage-bg-2">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-10 offset-lg-1 text-center">
-            <div class="hero-text">
-              <div class="hero-text-tablecell">
-                <p class="subtitle">Fresh Everyday</p>
-                <h1>100% Organic Collection</h1>
-                <div class="hero-btns">
-                  <a href="shop.html" class="boxed-btn">Visit Shop</a>
-                  <a href="contact.html" class="bordered-btn">Contact Us</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- single home slider -->
-    <div class="single-homepage-slider homepage-bg-3">
-      <div class="container">
-        <div class="row">
-          <div class="col-lg-10 offset-lg-1 text-right">
-            <div class="hero-text">
-              <div class="hero-text-tablecell">
-                <p class="subtitle">Mega Sale Going On!</p>
-                <h1>Get December Discount</h1>
-                <div class="hero-btns">
-                  <a href="shop.html" class="boxed-btn">Visit Shop</a>
-                  <a href="contact.html" class="bordered-btn">Contact Us</a>
-                </div>
+  {% comment %} <!-- =============================== Static Home Page Slider ======================================= -->
+  <!-- hero area -->
+  <div class="hero-area hero-bg">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-9 offset-lg-2 text-center">
+          <div class="hero-text">
+            <div class="hero-text-tablecell">
+              <p class="subtitle">Fresh & Organic</p>
+              <h1>Delicious Seasonal Fruits</h1>
+              <div class="hero-btns">
+                <a href="{% url 'product-list' %}" class="boxed-btn">Visit Shop</a>
+                <a href="{% url 'contact' %}" class="bordered-btn">Contact Us</a>
               </div>
             </div>
           </div>
@@ -107,7 +66,7 @@
       </div>
     </div>
   </div>
-  <!-- end home page slider -->
+  <!-- end hero area -->
   {% endcomment %}
   <!-- =============================================================================================== -->
   <!-- =============================== End of Home Page Slider ======================================= -->
@@ -162,6 +121,16 @@
   <!-- =============================================================================================== -->
 
   <!-- =============================================================================================== -->
+  <!-- =================================== Pop-Up Messages =========================================== -->
+  <!-- =============================================================================================== -->
+  <div id="message-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <p id="modal-message"></p>
+    </div>
+  </div>
+
+  <!-- =============================================================================================== -->
   <!-- ============================== Start of Products Section ====================================== -->
   <!-- =============================================================================================== -->
   <!-- product section -->
@@ -187,7 +156,7 @@
               <p class="product-price">
                 <span>Per Kg</span> {{ product.price }}৳
               </p>
-              <a href="{% url 'cart' %}" class="cart-btn"><i class="fas fa-shopping-cart"></i> Add to Cart</a>
+              <button class="cart-btn add-to-cart" data-product-id="{{ product.id }}"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
             </div>
           </div>
         {% endfor %}
@@ -414,5 +383,57 @@
 <!-- ====================== For additional child-specific styles or scripts ======================= -->
 <!-- =============================================================================================== -->
 {% block extra_scripts %}
-  <!-- For child-specific JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js"></script>
+
+  <script>
+    // Add to Cart functionality
+    $(document).on('click', '.add-to-cart', function () {
+      console.log('Add to Cart button clicked') // Debug log
+      const productId = $(this).data('product-id')
+      const csrfToken = $('form input[name="csrfmiddlewaretoken"]').val()
+      function showMessage(message) {
+        $('#modal-message').text(message)
+        $('#message-modal').fadeIn()
+    
+        // Auto-hide the modal after 2 seconds
+        setTimeout(() => {
+          $('#message-modal').fadeOut()
+        }, 2000)
+      }
+    
+      function hideMessage() {
+        $('#message-modal').fadeOut()
+      }
+    
+      // Close the modal when clicking the close button or outside the modal
+      $('.close-modal').click(hideMessage)
+      $(window).click(function (event) {
+        if ($(event.target).is('#message-modal')) {
+          hideMessage()
+        }
+      })
+    
+      $.ajax({
+        url: '{% url "cart" %}',
+        method: 'POST',
+        data: {
+          action: 'add',
+          product_id: productId,
+          quantity: 1,
+          csrfmiddlewaretoken: csrfToken
+        },
+        success: function (response) {
+          console.log('AJAX success:', response)
+          // alert('Product added successfully!')
+          showMessage('Product added successfully!')
+        },
+        error: function (xhr, status, error) {
+          console.error('AJAX error:', xhr.responseText)
+          // alert('Failed to add product to cart.')
+          showMessage('Failed to add product to cart.')
+        }
+      })
+    })
+  </script>
 {% endblock %}

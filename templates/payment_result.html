@@ -19,9 +19,8 @@
 <!-- =============================================================================================== -->
 {% block content %}
   <!-- =============================================================================================== -->
-  <!-- ============================== Start of Home Page Slider ====================================== -->
+  <!-- ================================= breadcrumb-section ========================================== -->
   <!-- =============================================================================================== -->
-  <!-- =============================== Dynamic Home Page Slider ====================================== -->
   <!-- breadcrumb-section -->
   <div class="breadcrumb-section breadcrumb-bg">
     <div class="container">
@@ -36,31 +35,87 @@
     </div>
   </div>
   <!-- end breadcrumb section -->
+
+  <!-- =============================================================================================== -->
+  <!-- ================================= Start of Cart Section ======================================= -->
+  <!-- =============================================================================================== -->
   <!-- Payment Result Section -->
-  <div class="contact-from-section mt-150 mb-150">
+  <div class="cart-section mt-150 mb-150">
     <div class="container">
       <div class="row">
-        <div class="col-lg-8 mb-5 mb-lg-0">
-          <div class="form-title">
-            <h1>Payment Result</h1>
-            <p>
-              <strong>Transaction ID:</strong> {{ tran_id }}
-            </p>
-            <p>
-              <strong>Status:</strong> {{ status }}
-            </p>
-            <p>
-              <strong>Amount:</strong> {{ amount }} {{ currency }}
-            </p>
-            <p>
-              <strong>Payment Method:</strong> {{ payment_method }}
-            </p>
-            <p>
-              <strong>Customer Name:</strong> {{ cus_name }}
-            </p>
-            <p>
-              <strong>Date:</strong> {{ date }}
-            </p>
+        <!-- ================================= Price Section ======================================= -->
+        <div class="col-lg-4">
+          <div class="total-section">
+            <table class="total-table">
+              <thead class="total-table-head">
+                <tr class="table-total-row">
+                  <th>
+                    <strong>Payment</strong>
+                  </th>
+                  <th>
+                    <strong>Result</strong>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if error %}
+                  <tr class="total-data">
+                    <td colspan="2" style="color: red; text-align: center;">
+                      <strong>{{ error }}</strong>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr class="total-data">
+                    <td>
+                      <strong>Transaction ID:</strong>
+                    </td>
+                    <td>{{ tran_id }}</td>
+                  </tr>
+                  <tr class="total-data">
+                    <td>
+                      <strong>Status:</strong>
+                    </td>
+                    <td>
+                      <span class="{% if status == 'Success' %}
+                                                   
+                          text-success
+
+                        {% else %}
+                          
+                          text-danger
+
+                        {% endif %}">
+                        {{ status }}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr class="total-data">
+                    <td>
+                      <strong>Amount:</strong>
+                    </td>
+                    <td>{{ amount|default:'N/A' }} {{ currency|default:'N/A' }}</td>
+                  </tr>
+                  <tr class="total-data">
+                    <td>
+                      <strong>Payment Method:</strong>
+                    </td>
+                    <td>{{ payment_method|default:'N/A' }}</td>
+                  </tr>
+                  <tr class="total-data">
+                    <td>
+                      <strong>Customer Name:</strong>
+                    </td>
+                    <td>{{ cus_name|default:'N/A' }}</td>
+                  </tr>
+                  <tr class="total-data">
+                    <td>
+                      <strong>Date:</strong>
+                    </td>
+                    <td>{{ date|default:'N/A' }}</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -69,11 +124,11 @@
   <!-- End Payment Result Section -->
 {% endblock %}
 <!-- =============================================================================================== -->
-<!-- ================================ End of Main Bloock Content ================================== -->
+<!-- ================================ End of Main Bloock Content =================================== -->
 <!-- =============================================================================================== -->
 
 <!-- =============================================================================================== -->
-<!-- ====================== For additional child-specific styles or scripts ======================= -->
+<!-- ====================== For additional child-specific styles or scripts ======================== -->
 <!-- =============================================================================================== -->
 {% block extra_scripts %}
   <!-- For child-specific JavaScript -->

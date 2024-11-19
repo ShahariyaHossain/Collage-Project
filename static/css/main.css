@@ -1,11 +1,3 @@
-/*
-Template Name: Fruitkha - Responsive Bootstrap4 Shop Template
-Template URI: 
-Description: Bootstrap template for fruits or any other kind of shop
-Author: Imran Hossain
-Author URI: https://imransdesign.com/
-Version: 1.0
-*/
 /* -----------------------------------------------------------------------------
 
 # Base - Genral & Typography
@@ -475,7 +467,8 @@ a.read-more-btn:hover {
 
 a.boxed-btn,
 a.bordered-btn,
-a.cart-btn {
+a.cart-btn,
+button.cart-btn {
   border-radius: 50px;
 }
 
@@ -1278,13 +1271,15 @@ div.owl-controls div.owl-nav div:hover {
   box-shadow: none;
 }
 
-a.cart-btn {
+a.cart-btn,
+button.cart-btn {
   -webkit-transition: 0.3s;
   -o-transition: 0.3s;
   transition: 0.3s;
 }
 
-a.cart-btn:hover {
+a.cart-btn:hover,
+button.cart-btn:hover {
   background-color: #051922;
   color: #F28123;
 }
@@ -1522,7 +1517,7 @@ input[type="submit"] {
 }
 
 .homepage-slider {
-  height: 100%;
+  height: 100vh;
 }
 
 .homepage-slider div {
@@ -2039,9 +2034,9 @@ span.comment-date {
   letter-spacing: 1px;
 }
 
-/* ===========================================================================
-======I added some functionalities here, but not working, wooahhhh!!!==========
-============================================================================== */
+/* =========================================================================================
+====== _ShahariyaR, I added some functionalities here, but not working, wooahhhh!!!=========
+============================================================================================ */
 
 /* Time Unit Label Styling (e.g., Days, Hours) */
 .time-countdown .counter-column .inner {
@@ -2531,16 +2526,29 @@ p.product-price span {
   font-weight: 400;
 }
 
-a.cart-btn {
+a.cart-btn,
+button.cart-btn {
   font-family: 'Poppins', sans-serif;
   display: inline-block;
   background-color: #F28123;
   color: #fff;
   padding: 10px 20px;
+  border: none;
+  /* Remove border _ShahariyaR */
+  outline: none;
+  /* Remove focus outline _ShahariyaR */
+  cursor: pointer;
+  /* Pointer cursor for buttons _ShahariyaR */
 }
 
-a.cart-btn i {
+a.cart-btn i,
+button.cart-btn i {
   margin-right: 5px;
+}
+
+/* Adds a light shadow on focus _ShahariyaR */
+button.cart-btn:focus {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 .single-product-img img {
@@ -2584,7 +2592,8 @@ input[type="number"] {
   margin-bottom: 15px;
 }
 
-.single-product-form a.cart-btn {
+.single-product-form a.cart-btn,
+.single-product-form button.cart-btn {
   margin-bottom: 15px;
 }
 
@@ -2850,4 +2859,51 @@ table.order-details tbody td {
   display: table-cell;
   vertical-align: middle;
   width: 100%;
+}
+
+
+/* ==========================================================================
+=============================================================================
+
+# Mode Styles for Pop-up messeges in Products upgradation, modificaiton and delation
+#  _ShahariyaR
+=============================================================================
+============================================================================= */
+/* Modal styles */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  width: 300px;
+}
+
+.close-modal {
+  color: #aaa;
+  float: right;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
 }
