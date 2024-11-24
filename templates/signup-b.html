@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Reset and global styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+      }
+      
+      /* Signup container */
+      .signup-container {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+      }
+      
+      .signup-form {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .signup-form h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 1rem;
+      }
+      
+      /* Input group */
+      .input-group {
+        margin-bottom: 1rem;
+      }
+      
+      .input-group label {
+        display: block;
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.5rem;
+      }
+      
+      .input-group input {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+        transition: border 0.3s ease;
+      }
+      
+      .input-group input:focus {
+        border-color: #2575fc;
+      }
+      
+      /* Terms and Conditions */
+      .terms {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #555;
+      }
+      
+      .terms label {
+        margin-left: 0.5rem;
+      }
+      
+      .terms a {
+        color: #2575fc;
+        text-decoration: none;
+      }
+      
+      .terms a:hover {
+        text-decoration: underline;
+      }
+      
+      /* Button */
+      .signup-btn {
+        background: #2575fc;
+        color: #fff;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+      
+      .signup-btn:hover {
+        background: #6a11cb;
+      }
+      
+      /* Register link */
+      .register-link {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #555;
+      }
+      
+      .register-link a {
+        color: #2575fc;
+        text-decoration: none;
+      }
+      
+      .register-link a:hover {
+        text-decoration: underline;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .login-container {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="signup-container">
+      <form class="signup-form" id="signupForm" method="post">
+        {% csrf_token %}
+        <h2>Sign Up</h2>
+
+        <!-- Full Name -->
+        <div class="input-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" placeholder="Enter your full name" required title="Name can only contain alphabetic characters and spaces." />
+        </div>
+
+        <!-- Phone Number -->
+        <div class="input-group">
+          <label for="phone">Phone Number</label>
+          <input type="text" id="phone" name="phone" placeholder="Enter your phone number" required title="Enter a valid phone number with optional country code." />
+        </div>
+
+        <!-- Email -->
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required />
+        </div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required minlength="8" />
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="input-group">
+          <label for="password_confirm">Confirm Password</label>
+          <input type="password" id="password_confirm" name="password_confirm" placeholder="Confirm your password" required />
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="terms">
+          <input type="checkbox" id="terms" name="terms" required />
+          <label for="terms">I agree to the <a href="#">terms and conditions</a></label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="signup-btn">Sign Up</button>
+        <p class="register-link">
+          Already have an account? <a href="{% url 'login-b' %}">Login</a>
+        </p>
+      </form>
+    </div>
+
+    <script>
+      // JavaScript for signup form validation and dynamic behaviors
+      document.addEventListener('DOMContentLoaded', () => {
+        // Signup form validation
+        const form = document.getElementById('signupForm')
+        form.addEventListener('submit', function (event) {
+          // Collect form data
+          const phone = document.getElementById('phone').value.trim()
+          const password = document.getElementById('password').value.trim()
+          const confirmPassword = document.getElementById('password_confirm').value.trim()
+          const termsChecked = document.getElementById('terms').checked
+      
+          // Regex for phone number validation
+          const phoneRegex = /^\+?\d{1,4}[\d\s]{7,20}$/
+      
+          // Validate phone number
+          if (!phoneRegex.test(phone)) {
+            alert('Enter a valid phone number with optional country code.')
+            event.preventDefault()
+          }
+      
+          // Validate password confirmation
+          if (password !== confirmPassword) {
+            alert('Passwords do not match!')
+            event.preventDefault()
+          }
+      
+          // Enforce terms and conditions
+          if (!termsChecked) {
+            alert('You must agree to the terms and conditions.')
+            event.preventDefault()
+          }
+        })
+      })
+    </script>
+  </body>
+</html>

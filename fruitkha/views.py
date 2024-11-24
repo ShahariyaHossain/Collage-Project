@@ -4,7 +4,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from django.contrib.auth import login
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.hashers import check_password
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, DetailView, TemplateView
@@ -446,42 +447,110 @@ class CheckoutView(LoginRequiredMixin, TemplateView):
 # ===============================================================================================
 # =================================  Handling User Signup  ======================================
 # ===============================================================================================
-
+from django.contrib.auth.hashers import make_password
+from django.views import View
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.contrib.auth import login
+from django.contrib import messages
+from .forms import SignUpForm
+from .models import Account
+import json
 
 class SignUpView(View):
+    template_name = 'signup.html'
+
     def get(self, request):
         """Render the sign-up page with the registration form."""
         form = SignUpForm()
-        return render(request, 'signup.html', {'form': form})
+        return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        """Handle form submission for user registration."""
+        """Handle AJAX email validation and form submission."""
+        if request.content_type == 'application/json':  # AJAX email validation
+            try:
+                data = json.loads(request.body)
+                email = data.get('email', '').strip()
+
+                # Check if email already exists
+                if Account.objects.filter(email=email).exists():
+                    return JsonResponse({'success': False, 'errors': {'email': 'This email is already registered.'}})
+                return JsonResponse({'success': True})
+            except Exception:
+                return JsonResponse({'success': False, 'errors': {'general': 'An error occurred. Please try again.'}})
+
+        # Regular form submission
         form = SignUpForm(request.POST)
         if form.is_valid():
-            # Save the account (custom model)
+            # Save account and hash the password
             account = form.save(commit=False)
-            account.set_password(form.cleaned_data['password'])  # Encrypt the password
+            account.set_password(form.cleaned_data['password'])
             account.save()
 
-            # Log the user in automatically after registration
+            # Log in the user
             login(request, account)
-            
-            # Display success message
             messages.success(request, "Account created successfully.")
-            
-            # Trigger the signal to send a welcome email
-            multi_signal.send_robust(
-                sender=account.__class__,
-                subject="Welcome to Fruitkha",
-                message="Hello! Thank you for joining Fruitkha.",
-                recipient_list=[account.email]  # Correct recipient
-            )
-            
-            return redirect('home')  # Redirect to home or another suitable page
+            return JsonResponse({'success': True, 'redirect_url': redirect('home').url})  # Replace 'home' with your URL name
         else:
-            messages.error(request, "Error during registration. Please try again.")
-        
-        return render(request, 'signup.html', {'form': form})
+            # Collect form errors
+            errors = {field: error[0] for field, error in form.errors.items()}
+            return JsonResponse({'success': False, 'errors': errors})
+
+
+
+# ===============================================================================================
+# =================================  Handling User Signup  ======================================
+# ===============================================================================================
+class LoginView(View):
+    template_name = 'login.html'
+
+    def get(self, request):
+        """Render the login page."""
+        return render(request, self.template_name)
+
+    def post(self, request):
+        """Handle AJAX login requests."""
+        import json
+        data = json.loads(request.body)
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        remember = data.get('remember', False)
+
+        # Initialize response data
+        response_data = {'success': False, 'errors': {}}
+
+        # Validate email
+        try:
+            user = Account.objects.get(email=email)
+        except Account.DoesNotExist:
+            response_data['errors']['email'] = 'Email not found.'
+            return JsonResponse(response_data)
+
+        # Validate password
+        if not check_password(password, user.password):
+            response_data['errors']['password'] = 'Invalid password.'
+            return JsonResponse(response_data)
+
+        # Authenticate and login user
+        user = authenticate(request, username=user.email, password=password)
+        if user is not None:
+            # Login user
+            login(request, user)
+
+            # Set session expiry based on "Remember Me"
+            if remember:
+                request.session.set_expiry(1209600)  # 2 weeks
+            else:
+                request.session.set_expiry(172800)  # 2 days
+
+            # Success response
+            response_data['success'] = True
+            response_data['redirect_url'] = '/'  # Redirect to home or a custom URL
+            return JsonResponse(response_data)
+        else:
+            response_data['errors']['password'] = 'Authentication failed.'
+            return JsonResponse(response_data)
+
 
 
 
@@ -799,4 +868,7 @@ class SubscribeView(View):
 
 
 
-
+def signup_b(request):
+    return render(request, 'signup-b.html')
+def login_b(request):
+    return render(request, 'login-b.html')

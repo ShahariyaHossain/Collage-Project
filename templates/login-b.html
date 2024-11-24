@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* Reset and global styles */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #fff;
+      }
+      
+      /* Login container */
+      .login-container {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+      }
+      
+      .login-form {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .login-form h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 1rem;
+      }
+      
+      /* Input group */
+      .input-group {
+        margin-bottom: 1rem;
+      }
+      
+      .input-group label {
+        display: block;
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 0.5rem;
+      }
+      
+      .input-group input {
+        width: 100%;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+        transition: border 0.3s ease;
+      }
+      
+      .input-group input:focus {
+        border-color: #2575fc;
+      }
+      
+      /* Terms and Conditions */
+      .terms {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #555;
+      }
+      
+      .terms label {
+        margin-left: 0.5rem;
+      }
+      
+      .terms a {
+        color: #2575fc;
+        text-decoration: none;
+      }
+      
+      .terms a:hover {
+        text-decoration: underline;
+      }
+      
+      /* Button */
+      .login-btn {
+        background: #2575fc;
+        color: #fff;
+        padding: 0.8rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      
+      .login-btn:hover {
+        background: #6a11cb;
+      }
+      
+      /* Register link */
+      .register-link {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: #555;
+      }
+      
+      .register-link a {
+        color: #2575fc;
+        text-decoration: none;
+      }
+      
+      .register-link a:hover {
+        text-decoration: underline;
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .login-container {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="login-container">
+      <form onsubmit="handleSubmit(event)" class="login-form" id="form" method="post">
+        {% csrf_token %}
+        <h2>Login</h2>
+        <!-- Email -->
+        <div class="input-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required />
+        </div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" required minlength="8" />
+        </div>
+
+        <!-- Remember Me -->
+        <div class="terms">
+          <input type="checkbox" id="remember" name="remember" />
+          <label for="remember">Remember Me</label>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="login-btn">Login</button>
+        <p class="register-link">
+          Don't have an account? <a href="{% url 'signup-b' %}">Register</a>
+        </p>
+      </form>
+    </div>
+
+    <script>
+      // JavaScript for login, and dynamic behaviors
+      document.addEventListener('DOMContentLoaded', () => {
+        // Handle form submission
+        const form = document.getElementById('form')
+        form.addEventListener('submit', (event) => {
+          event.preventDefault() // Prevent form from submitting and refreshing the page
+      
+          // Collect form data
+          const formData = new FormData(form)
+          const email = formData.get('email')
+          const password = formData.get('password')
+      
+          // Basic validation logic (if needed)
+          if (!email || !password) {
+            alert('Please fill in all fields.')
+            return
+          }
+      
+          // Add any custom login handling here
+          console.log('Login submitted:', { email, password })
+          form.submit() // Submit the form after custom checks
+        })
+      })
+    </script>
+  </body>
+</html>
