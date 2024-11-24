@@ -1,6 +1,5 @@
 from django.urls import path, re_path
 from . import views
-from django.contrib.auth.views import LoginView
 
 urlpatterns = [
     path('', views.HomePageView.as_view(), name='home'),  # Root URL for this app
@@ -11,7 +10,6 @@ urlpatterns = [
     path('cart/', views.CartView.as_view(), name='cart'),
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
     path('signup/', views.SignUpView.as_view(), name='signup'),
-    path('login1/', LoginView.as_view(template_name='login.html'), name='login1'),  # Built-in login view
     path('login/', views.LoginView.as_view(), name='login'),
     path('about/', views.AboutView.as_view(), name='about'),
     path('contact/', views.ContactView.as_view(), name='contact'),

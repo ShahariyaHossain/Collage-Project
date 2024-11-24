@@ -2907,3 +2907,212 @@ table.order-details tbody td {
   text-decoration: none;
   cursor: pointer;
 }
+
+
+/* ==========================================================================
+=============================================================================
+
+# Credential style for signup and login
+#  _ShahariyaR
+=============================================================================
+============================================================================= */
+/* Video background */
+.video-bg {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.video-bg video {
+  width: 100%;
+  height: 100vh;
+  object-fit: cover;
+  background-position: center center;
+  /* To ensure the fallback image placed center in both X & Y axix */
+  opacity: 0.7;
+}
+
+/* Form container */
+.credential-body {
+  display: none;
+  /* Hidden initially */
+  position: absolute;
+  /* Ensure it overlays the video */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  padding: 15px;
+  font-family: 'Arial', sans-serif;
+  /* To override the main font style*/
+  align-items: center;
+  /* Center content vertically */
+  justify-content: center;
+  /* Center content horizontally */
+  z-index: 10;
+  /* Bring form in front of video */
+}
+
+.credential-form {
+  width: 100%;
+  max-width: 480px;
+  padding: 50px 45px 60px 45px;
+  background: rgba(0, 0, 0, 0.7);
+  /* Slightly darker background for better readability(0.4 > 0.7) */
+  box-shadow: 0 15px 20px rgba(0, 0, 0, 0.5);
+  /* Increased shadow for better contrast(0.2 > 0.5) */
+  border-radius: 8px;
+  /* Smooth corners */
+  backdrop-filter: blur(5px);
+  /* Subtle background blur for better aesthetics */
+  transform: translateY(0);
+  transition: transform 0.3s ease-in-out;
+  /* Smooth hover effect */
+}
+
+/* Hover effect for form */
+.credential-form:hover {
+  transform: translateY(-5px);
+  /* Lift the form slightly */
+}
+
+@media (max-width: 575px) {
+  .credential-form {
+    width: 100%;
+    padding: 30px 20px;
+  }
+}
+
+/* Form Heading */
+.credential-form h2 {
+  color: #fff;
+  font-size: 30px;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  letter-spacing: 1px;
+}
+
+/* Input group */
+.credential-form .form-input {
+  margin-bottom: 1.5rem;
+}
+
+.credential-form .form-input label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.credential-form .form-input input {
+  width: 100%;
+  height: 40px;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #fff;
+  border-bottom: 2px solid #fff;
+  outline: none;
+  transition: border-color 0.3s ease-in-out;
+}
+
+/* Input field focus effect */
+.credential-form .form-input input:focus {
+  border-color: #f067ff;
+  /* Focus color */
+}
+
+.credential-form .form-input input::placeholder {
+  color: #f067ff;
+  font-style: italic;
+}
+
+/* Submit button */
+.credential-form .form-input input[type='submit'] {
+  width: 100%;
+  height: 45px;
+  margin-top: 1rem;
+  background: #f067ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 25px;
+  text-transform: uppercase;
+  transition: background 0.4s ease, transform 0.2s ease;
+}
+
+/* Submit button hover effect */
+.credential-form .form-input input[type='submit']:hover {
+  background: #000;
+  transform: scale(1.05);
+  /* Slight zoom effect */
+}
+
+/* Registration link */
+.credential-form .registration {
+  text-align: center;
+  margin-top: 1rem;
+  color: #fff;
+  font-size: 16px;
+}
+
+.credential-form .registration a {
+  color: #f067ff;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.credential-form .registration a:hover {
+  text-decoration: underline;
+  color: #fff;
+}
+
+/* Terms and conditions */
+.credential-form .terms {
+  margin-top: 1rem;
+  font-size: 18px;
+  color: #fff;
+}
+
+.credential-form .terms label {
+  font-weight: normal;
+  margin-left: 5px;
+}
+
+.credential-form .terms a {
+  color: #f067ff;
+  text-decoration: none;
+}
+
+.credential-form .terms a:hover {
+  text-decoration: underline;
+  color: #fff;
+}
+
+/* Error Messages */
+.error-message {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .credential-body {
+    padding: 10px;
+  }
+
+  .credential-form {
+    padding: 30px 20px;
+  }
+}
